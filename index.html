@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>戀與深空思念卡片收集檢核表</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div>
+        <p class="label">戀與深空</p>
+        <h1>思念卡片收集檢核表</h1>
+      </div>
+      <div class="counter">
+        <strong id="ownedCount">0</strong>
+        <span>已取得</span>
+      </div>
+    </header>
+
+    <p id="statusBanner" class="status" hidden></p>
+
+    <section class="panel picker" aria-label="選擇卡片">
+      <label>
+        <span>角色</span>
+        <select id="characterSelect"></select>
+      </label>
+      <label>
+        <span>卡片</span>
+        <select id="cardSelect"></select>
+      </label>
+    </section>
+
+    <section class="panel editor" aria-label="目前卡片">
+      <div class="preview">
+        <img id="cardImage" alt="" loading="lazy">
+        <div>
+          <p id="cardMeta" class="meta">請選擇卡片</p>
+          <h2 id="cardTitle">尚未選擇</h2>
+        </div>
+      </div>
+
+      <label class="check-row">
+        <input id="ownedInput" type="checkbox">
+        <span>已取得</span>
+      </label>
+
+      <div class="grid2">
+        <label>
+          <span>疊卡數量</span>
+          <input id="duplicateInput" type="number" min="0" max="99" inputmode="numeric" placeholder="0">
+        </label>
+        <label>
+          <span>升星等級</span>
+          <input id="rankInput" type="number" min="0" max="5" inputmode="numeric" placeholder="0">
+        </label>
+      </div>
+
+      <label>
+        <span>星核紀錄</span>
+        <textarea id="coreInput" rows="3" placeholder="例：紅 2、黃 1，或其他備註"></textarea>
+      </label>
+
+      <div class="actions">
+        <button id="deleteCurrentBtn" type="button" class="danger">刪除此張紀錄</button>
+        <button id="resetFormBtn" type="button">清空欄位</button>
+      </div>
+    </section>
+
+    <section class="panel records" aria-label="已儲存紀錄">
+      <div class="records-head">
+        <div>
+          <p class="label">本機儲存</p>
+          <h2>已儲存紀錄</h2>
+        </div>
+        <input id="searchInput" type="search" placeholder="搜尋角色或卡名">
+      </div>
+      <div id="recordList" class="record-list"></div>
+      <p id="emptyState" class="empty">還沒有任何卡片紀錄。</p>
+    </section>
+  </main>
+
+  <script src="cards.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
