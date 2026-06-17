@@ -21,6 +21,8 @@
 
     <nav class="tabs" aria-label="功能切換">
       <button id="cardsTabBtn" type="button" class="is-active" data-view="cardsView">卡片紀錄</button>
+      <button id="calculatorTabBtn" type="button" data-view="calculatorView">屬性計算</button>
+      <button id="gachaTabBtn" type="button" data-view="gachaView">抽卡狀態</button>
       <button id="triggersTabBtn" type="button" data-view="triggersView">隱藏觸發</button>
     </nav>
 
@@ -36,6 +38,7 @@
           <span>卡片</span>
           <select id="cardSelect"></select>
         </label>
+        <p id="cardDataInfo" class="data-info">正在載入卡片資料...</p>
       </section>
 
       <section class="panel editor" aria-label="目前卡片">
@@ -119,7 +122,174 @@
           <input id="searchInput" type="search" placeholder="搜尋角色或卡名">
         </div>
         <div id="recordList" class="record-list"></div>
-        <p id="emptyState" class="empty">還沒有任何卡片紀錄。</p>
+        <p id="emptyState" class="empty">尚未新增任何收集紀錄。上方選卡後勾選或填芯核，就會出現在這裡。</p>
+      </section>
+    </section>
+
+    <section id="calculatorView" class="view">
+      <section class="panel trigger-editor" aria-label="屬性計算器">
+        <div class="section-title">
+          <p class="label">Calculator</p>
+          <h2>屬性計算器</h2>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>基礎生命</span>
+            <input id="baseHpInput" type="number" min="0" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>基礎攻擊</span>
+            <input id="baseAtkInput" type="number" min="0" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>基礎防禦</span>
+            <input id="baseDefInput" type="number" min="0" inputmode="decimal" placeholder="0">
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>生命加成%</span>
+            <input id="hpPercentInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>攻擊加成%</span>
+            <input id="atkPercentInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>防禦加成%</span>
+            <input id="defPercentInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>固定生命</span>
+            <input id="flatHpInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>固定攻擊</span>
+            <input id="flatAtkInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>固定防禦</span>
+            <input id="flatDefInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>暴擊率%</span>
+            <input id="critRateInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>暴擊傷害%</span>
+            <input id="critDmgInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>傷害提升%</span>
+            <input id="dmgBonusInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>
+            <span>虛弱增傷%</span>
+            <input id="weakBonusInput" type="number" inputmode="decimal" placeholder="0">
+          </label>
+          <label>
+            <span>隊伍主屬性</span>
+            <select id="calcFocusSelect">
+              <option value="atk">攻擊</option>
+              <option value="hp">生命</option>
+              <option value="def">防禦</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="calculatorResult" class="result-grid"></div>
+        <button id="resetCalculatorBtn" type="button">清空計算器</button>
+      </section>
+    </section>
+
+    <section id="gachaView" class="view">
+      <section class="panel trigger-editor" aria-label="新增抽卡狀態">
+        <div class="section-title">
+          <p class="label">Wish</p>
+          <h2>抽卡狀態</h2>
+        </div>
+
+        <div class="grid2">
+          <label>
+            <span>卡池名稱</span>
+            <input id="bannerNameInput" type="text" placeholder="例：限定雙人池、常駐池">
+          </label>
+          <label>
+            <span>卡池類型</span>
+            <select id="bannerTypeSelect">
+              <option value="限定">限定</option>
+              <option value="常駐">常駐</option>
+              <option value="活動">活動</option>
+              <option value="其他">其他</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>已墊抽數</span>
+            <input id="pityInput" type="number" min="0" inputmode="numeric" placeholder="0">
+          </label>
+          <label>
+            <span>目標保底</span>
+            <input id="pityTargetInput" type="number" min="1" inputmode="numeric" value="70">
+          </label>
+          <label>
+            <span>累計抽數</span>
+            <input id="totalPullsInput" type="number" min="0" inputmode="numeric" placeholder="0">
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>鑽石</span>
+            <input id="diamondInput" type="number" min="0" inputmode="numeric" placeholder="0">
+          </label>
+          <label>
+            <span>票券</span>
+            <input id="ticketInput" type="number" min="0" inputmode="numeric" placeholder="0">
+          </label>
+          <label>
+            <span>單抽鑽石</span>
+            <input id="diamondPerPullInput" type="number" min="1" inputmode="numeric" value="150">
+          </label>
+        </div>
+
+        <label class="check-row">
+          <input id="guaranteeInput" type="checkbox">
+          <span>下一張目標保底</span>
+        </label>
+
+        <label>
+          <span>備註</span>
+          <textarea id="bannerNoteInput" rows="3" placeholder="例：目標卡、歪卡紀錄、預計補抽"></textarea>
+        </label>
+
+        <div id="gachaEstimate" class="recommendation"></div>
+        <button id="addBannerBtn" type="button" class="primary">加入卡池狀態</button>
+      </section>
+
+      <section class="panel records" aria-label="抽卡狀態清單">
+        <div class="records-head">
+          <div>
+            <p class="label">本機儲存</p>
+            <h2>卡池清單</h2>
+          </div>
+          <input id="bannerSearchInput" type="search" placeholder="搜尋卡池">
+        </div>
+        <div id="bannerList" class="record-list"></div>
+        <p id="bannerEmptyState" class="empty">尚未新增抽卡狀態。填寫卡池資料後按「加入卡池狀態」。</p>
       </section>
     </section>
 
@@ -175,7 +345,7 @@
           <input id="triggerSearchInput" type="search" placeholder="搜尋觸發或角色">
         </div>
         <div id="triggerList" class="record-list"></div>
-        <p id="triggerEmptyState" class="empty">還沒有任何隱藏觸發紀錄。</p>
+        <p id="triggerEmptyState" class="empty">尚未新增隱藏觸發檢核。輸入名稱與條件後按「加入檢核」。</p>
       </section>
     </section>
   </main>

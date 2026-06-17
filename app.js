@@ -1,9 +1,12 @@
 (function () {
   var CARD_STORAGE_KEY = "lysk-card-checklist:v2";
   var TRIGGER_STORAGE_KEY = "lysk-hidden-triggers:v1";
+  var GACHA_STORAGE_KEY = "lysk-gacha-status:v1";
+  var CALCULATOR_STORAGE_KEY = "lysk-attribute-calculator:v1";
   var cards = window.LYSK_CARDS && window.LYSK_CARDS.length ? window.LYSK_CARDS : [];
   var records = {};
   var triggers = [];
+  var banners = [];
   var currentCard = null;
   var storage = createStorage();
 
@@ -47,7 +50,41 @@
     addTrigger: document.getElementById("addTriggerBtn"),
     triggerSearch: document.getElementById("triggerSearchInput"),
     triggerList: document.getElementById("triggerList"),
-    triggerEmpty: document.getElementById("triggerEmptyState")
+    triggerEmpty: document.getElementById("triggerEmptyState"),
+    cardDataInfo: document.getElementById("cardDataInfo"),
+    calculatorResult: document.getElementById("calculatorResult"),
+    resetCalculator: document.getElementById("resetCalculatorBtn"),
+    calcInputs: [
+      document.getElementById("baseHpInput"),
+      document.getElementById("baseAtkInput"),
+      document.getElementById("baseDefInput"),
+      document.getElementById("hpPercentInput"),
+      document.getElementById("atkPercentInput"),
+      document.getElementById("defPercentInput"),
+      document.getElementById("flatHpInput"),
+      document.getElementById("flatAtkInput"),
+      document.getElementById("flatDefInput"),
+      document.getElementById("critRateInput"),
+      document.getElementById("critDmgInput"),
+      document.getElementById("dmgBonusInput"),
+      document.getElementById("weakBonusInput"),
+      document.getElementById("calcFocusSelect")
+    ],
+    bannerName: document.getElementById("bannerNameInput"),
+    bannerType: document.getElementById("bannerTypeSelect"),
+    pity: document.getElementById("pityInput"),
+    pityTarget: document.getElementById("pityTargetInput"),
+    totalPulls: document.getElementById("totalPullsInput"),
+    diamonds: document.getElementById("diamondInput"),
+    tickets: document.getElementById("ticketInput"),
+    diamondPerPull: document.getElementById("diamondPerPullInput"),
+    guarantee: document.getElementById("guaranteeInput"),
+    bannerNote: document.getElementById("bannerNoteInput"),
+    gachaEstimate: document.getElementById("gachaEstimate"),
+    addBanner: document.getElementById("addBannerBtn"),
+    bannerSearch: document.getElementById("bannerSearchInput"),
+    bannerList: document.getElementById("bannerList"),
+    bannerEmpty: document.getElementById("bannerEmptyState")
   };
 
   function createStorage() {
@@ -122,11 +159,13 @@
   function initSelectors() {
     if (!cards.length) {
       showStatus("卡片資料沒有載入。請確認上傳時有包含 cards.js。");
+      if (els.cardDataInfo) els.cardDataInfo.textContent = "卡片資料未載入。";
       disableCardForm(true);
       return;
     }
 
     var roles = uniqueRoles();
+    if (els.cardDataInfo) els.cardDataInfo.textContent = "已載入 " + cards.length + " 張卡片資料。";
     replaceChildren(els.character, roles.map(function (role) { return option(role, role); }));
     replaceChildren(els.triggerRole, [option("通用", "通用")].concat(roles.map(function (role) { return option(role, role); })));
     replaceChildren(els.coreMain, CORE_MAIN_STATS.map(function (stat) { return option(stat, stat || "未選擇"); }));
@@ -568,6 +607,244 @@
     els.triggerEmpty.style.display = items.length ? "none" : "block";
   }
 
+  function num(value) {
+    var parsed = Number(value);
+    return isFinite(parsed) ? parsed : 0;
+  }
+
+  function percent(value) {
+    return num(value) / 100;
+  }
+
+  function formatNumber(value) {
+    if (!isFinite(value)) return "0";
+    return Math.round(value).toLocaleString("zh-Hant");
+  }
+
+  function formatDecimal(value) {
+    if (!isFinite(value)) return "0.00";
+    return value.toFixed(2);
+  }
+
+  function calculatorValues() {
+    return {
+      baseHp: num(document.getElementById("baseHpInput").value),
+      baseAtk: num(document.getElementById("baseAtkInput").value),
+      baseDef: num(document.getElementById("baseDefInput").value),
+      hpPercent: num(document.getElementById("hpPercentInput").value),
+      atkPercent: num(document.getElementById("atkPercentInput").value),
+      defPercent: num(document.getElementById("defPercentInput").value),
+      flatHp: num(document.getElementById("flatHpInput").value),
+      flatAtk: num(document.getElementById("flatAtkInput").value),
+      flatDef: num(document.getElementById("flatDefInput").value),
+      critRate: num(document.getElementById("critRateInput").value),
+      critDmg: num(document.getElementById("critDmgInput").value),
+      dmgBonus: num(document.getElementById("dmgBonusInput").value),
+      weakBonus: num(document.getElementById("weakBonusInput").value),
+      focus: document.getElementById("calcFocusSelect").value
+    };
+  }
+
+  function saveCalculator(values) {
+    saveJSON(CALCULATOR_STORAGE_KEY, values);
+  }
+
+  function restoreCalculator() {
+    var values = loadJSON(CALCULATOR_STORAGE_KEY, {});
+    var map = {
+      baseHpInput: values.baseHp,
+      baseAtkInput: values.baseAtk,
+      baseDefInput: values.baseDef,
+      hpPercentInput: values.hpPercent,
+      atkPercentInput: values.atkPercent,
+      defPercentInput: values.defPercent,
+      flatHpInput: values.flatHp,
+      flatAtkInput: values.flatAtk,
+      flatDefInput: values.flatDef,
+      critRateInput: values.critRate,
+      critDmgInput: values.critDmg,
+      dmgBonusInput: values.dmgBonus,
+      weakBonusInput: values.weakBonus
+    };
+    for (var id in map) {
+      if (map.hasOwnProperty(id) && map[id] !== undefined) document.getElementById(id).value = map[id];
+    }
+    if (values.focus) document.getElementById("calcFocusSelect").value = values.focus;
+  }
+
+  function renderCalculator() {
+    var values = calculatorValues();
+    var hp = values.baseHp * (1 + percent(values.hpPercent)) + values.flatHp;
+    var atk = values.baseAtk * (1 + percent(values.atkPercent)) + values.flatAtk;
+    var def = values.baseDef * (1 + percent(values.defPercent)) + values.flatDef;
+    var focusValue = values.focus === "hp" ? hp : values.focus === "def" ? def : atk;
+    var cappedCrit = Math.max(0, Math.min(values.critRate, 100));
+    var critFactor = 1 + percent(cappedCrit) * percent(values.critDmg);
+    var dmgFactor = 1 + percent(values.dmgBonus) + percent(values.weakBonus);
+    var score = focusValue * critFactor * dmgFactor;
+    var labels = {
+      hp: "生命輸出指數",
+      atk: "攻擊輸出指數",
+      def: "防禦輸出指數"
+    };
+    var result = [
+      ["最終生命", formatNumber(hp)],
+      ["最終攻擊", formatNumber(atk)],
+      ["最終防禦", formatNumber(def)],
+      ["暴擊期望", formatDecimal(critFactor) + "x"],
+      ["增傷倍率", formatDecimal(dmgFactor) + "x"],
+      [labels[values.focus] || "輸出指數", formatNumber(score)]
+    ];
+    replaceChildren(els.calculatorResult, result.map(function (item) {
+      var card = document.createElement("div");
+      card.className = "result-card";
+      var label = document.createElement("span");
+      label.textContent = item[0];
+      var strong = document.createElement("strong");
+      strong.textContent = item[1];
+      card.appendChild(label);
+      card.appendChild(strong);
+      return card;
+    }));
+    saveCalculator(values);
+  }
+
+  function resetCalculator() {
+    for (var i = 0; i < els.calcInputs.length; i += 1) {
+      if (!els.calcInputs[i]) continue;
+      if (els.calcInputs[i].tagName === "SELECT") els.calcInputs[i].value = "atk";
+      else els.calcInputs[i].value = "";
+    }
+    saveJSON(CALCULATOR_STORAGE_KEY, {});
+    renderCalculator();
+  }
+
+  function currentGachaEstimate() {
+    var target = Math.max(1, num(els.pityTarget.value || 70));
+    var pity = Math.max(0, num(els.pity.value));
+    var remaining = Math.max(0, target - pity);
+    var tickets = Math.max(0, num(els.tickets.value));
+    var diamonds = Math.max(0, num(els.diamonds.value));
+    var perPull = Math.max(1, num(els.diamondPerPull.value || 150));
+    var availablePulls = tickets + Math.floor(diamonds / perPull);
+    return {
+      target: target,
+      pity: pity,
+      remaining: remaining,
+      tickets: tickets,
+      diamonds: diamonds,
+      perPull: perPull,
+      availablePulls: availablePulls,
+      shortPulls: Math.max(0, remaining - availablePulls),
+      shortDiamonds: Math.max(0, remaining - availablePulls) * perPull
+    };
+  }
+
+  function renderGachaEstimate() {
+    var estimate = currentGachaEstimate();
+    els.gachaEstimate.innerHTML = [
+      "<p><strong>距離目標保底</strong>：還差 " + estimate.remaining + " 抽。</p>",
+      "<p><strong>目前資源</strong>：約可抽 " + estimate.availablePulls + " 抽。</p>",
+      "<p><strong>缺口</strong>：" + (estimate.shortPulls ? "還缺 " + estimate.shortPulls + " 抽，約 " + estimate.shortDiamonds + " 鑽。" : "資源已足夠到目標保底。") + "</p>"
+    ].join("");
+  }
+
+  function createBanner() {
+    var name = trim(els.bannerName.value);
+    if (!name) {
+      showStatus("請先輸入卡池名稱。");
+      return;
+    }
+    var estimate = currentGachaEstimate();
+    banners.push({
+      id: String(Date.now()),
+      name: name,
+      type: els.bannerType.value,
+      pity: estimate.pity,
+      pityTarget: estimate.target,
+      totalPulls: Math.max(0, num(els.totalPulls.value)),
+      diamonds: estimate.diamonds,
+      tickets: estimate.tickets,
+      diamondPerPull: estimate.perPull,
+      guarantee: els.guarantee.checked,
+      note: trim(els.bannerNote.value),
+      updatedAt: new Date().toISOString()
+    });
+    els.bannerName.value = "";
+    els.pity.value = "";
+    els.totalPulls.value = "";
+    els.diamonds.value = "";
+    els.tickets.value = "";
+    els.guarantee.checked = false;
+    els.bannerNote.value = "";
+    saveJSON(GACHA_STORAGE_KEY, banners);
+    renderGachaEstimate();
+    renderBanners();
+  }
+
+  function renderBanner(item) {
+    var estimate = {
+      remaining: Math.max(0, item.pityTarget - item.pity),
+      availablePulls: Math.max(0, item.tickets) + Math.floor(Math.max(0, item.diamonds) / Math.max(1, item.diamondPerPull || 150))
+    };
+    var wrap = document.createElement("article");
+    wrap.className = "record no-image";
+    var main = document.createElement("div");
+    main.className = "record-main";
+    var title = document.createElement("div");
+    title.className = "record-title";
+    title.textContent = item.name;
+    var badges = document.createElement("div");
+    badges.className = "badges";
+    addBadge(badges, item.type, "star");
+    addBadge(badges, "墊抽 " + item.pity + "/" + item.pityTarget);
+    addBadge(badges, "可抽 " + estimate.availablePulls);
+    addBadge(badges, item.guarantee ? "目標保底" : "未保證", item.guarantee ? "done" : "");
+    var note = document.createElement("p");
+    note.className = "record-note";
+    note.textContent = "距離保底 " + estimate.remaining + " 抽" + (item.note ? " / " + item.note : "");
+    var actions = document.createElement("div");
+    actions.className = "record-actions";
+    var plus = document.createElement("button");
+    plus.type = "button";
+    plus.textContent = "+1 抽";
+    plus.onclick = function () {
+      item.pity += 1;
+      item.totalPulls += 1;
+      item.updatedAt = new Date().toISOString();
+      saveJSON(GACHA_STORAGE_KEY, banners);
+      renderBanners();
+    };
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger";
+    remove.textContent = "刪除";
+    remove.onclick = function () {
+      banners = banners.filter(function (banner) { return banner.id !== item.id; });
+      saveJSON(GACHA_STORAGE_KEY, banners);
+      renderBanners();
+    };
+    actions.appendChild(plus);
+    actions.appendChild(remove);
+    main.appendChild(title);
+    main.appendChild(badges);
+    main.appendChild(note);
+    main.appendChild(actions);
+    wrap.appendChild(main);
+    return wrap;
+  }
+
+  function renderBanners() {
+    var query = (els.bannerSearch.value || "").toLowerCase();
+    var items = banners.filter(function (item) {
+      return !query || (item.name + " " + item.type + " " + item.note).toLowerCase().indexOf(query) !== -1;
+    });
+    items.sort(function (a, b) { return b.updatedAt.localeCompare(a.updatedAt); });
+    replaceChildren(els.bannerList, []);
+    for (var i = 0; i < items.length; i += 1) els.bannerList.appendChild(renderBanner(items[i]));
+    els.bannerEmpty.style.display = items.length ? "none" : "block";
+  }
+
   function bindEvents() {
     for (var i = 0; i < els.tabs.length; i += 1) {
       els.tabs[i].onclick = function () { switchView(this.getAttribute("data-view")); };
@@ -586,13 +863,32 @@
     els.search.oninput = renderRecords;
     els.addTrigger.onclick = createTrigger;
     els.triggerSearch.oninput = renderTriggers;
+    for (var j = 0; j < els.calcInputs.length; j += 1) {
+      if (els.calcInputs[j]) {
+        els.calcInputs[j].oninput = renderCalculator;
+        els.calcInputs[j].onchange = renderCalculator;
+      }
+    }
+    els.resetCalculator.onclick = resetCalculator;
+    var gachaInputs = [els.pity, els.pityTarget, els.diamonds, els.tickets, els.diamondPerPull];
+    for (var k = 0; k < gachaInputs.length; k += 1) {
+      gachaInputs[k].oninput = renderGachaEstimate;
+      gachaInputs[k].onchange = renderGachaEstimate;
+    }
+    els.addBanner.onclick = createBanner;
+    els.bannerSearch.oninput = renderBanners;
   }
 
   bindEvents();
   if (!storage.usable) showStatus("這個瀏覽器封鎖 localStorage，本次紀錄可能無法永久保存。");
   records = loadJSON(CARD_STORAGE_KEY, {});
   triggers = loadJSON(TRIGGER_STORAGE_KEY, []);
+  banners = loadJSON(GACHA_STORAGE_KEY, []);
+  restoreCalculator();
   initSelectors();
   renderRecords();
   renderTriggers();
+  renderCalculator();
+  renderGachaEstimate();
+  renderBanners();
 })();
