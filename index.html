@@ -19,65 +19,164 @@
       </div>
     </header>
 
+    <nav class="tabs" aria-label="功能切換">
+      <button id="cardsTabBtn" type="button" class="is-active" data-view="cardsView">卡片紀錄</button>
+      <button id="triggersTabBtn" type="button" data-view="triggersView">隱藏觸發</button>
+    </nav>
+
     <p id="statusBanner" class="status" hidden></p>
 
-    <section class="panel picker" aria-label="選擇卡片">
-      <label>
-        <span>角色</span>
-        <select id="characterSelect"></select>
-      </label>
-      <label>
-        <span>卡片</span>
-        <select id="cardSelect"></select>
-      </label>
-    </section>
-
-    <section class="panel editor" aria-label="目前卡片">
-      <div class="preview">
-        <img id="cardImage" alt="" loading="lazy">
-        <div>
-          <p id="cardMeta" class="meta">請選擇卡片</p>
-          <h2 id="cardTitle">尚未選擇</h2>
-        </div>
-      </div>
-
-      <label class="check-row">
-        <input id="ownedInput" type="checkbox">
-        <span>已取得</span>
-      </label>
-
-      <div class="grid2">
+    <section id="cardsView" class="view is-active">
+      <section class="panel picker" aria-label="選擇卡片">
         <label>
-          <span>疊卡數量</span>
-          <input id="duplicateInput" type="number" min="0" max="99" inputmode="numeric" placeholder="0">
+          <span>角色</span>
+          <select id="characterSelect"></select>
         </label>
         <label>
-          <span>升星等級</span>
-          <input id="rankInput" type="number" min="0" max="5" inputmode="numeric" placeholder="0">
+          <span>卡片</span>
+          <select id="cardSelect"></select>
         </label>
-      </div>
+      </section>
 
-      <label>
-        <span>星核紀錄</span>
-        <textarea id="coreInput" rows="3" placeholder="例：紅 2、黃 1，或其他備註"></textarea>
-      </label>
+      <section class="panel editor" aria-label="目前卡片">
+        <div class="preview">
+          <img id="cardImage" alt="" loading="lazy">
+          <div>
+            <p id="cardMeta" class="meta">請選擇卡片</p>
+            <h2 id="cardTitle">尚未選擇</h2>
+          </div>
+        </div>
 
-      <div class="actions">
-        <button id="deleteCurrentBtn" type="button" class="danger">刪除此張紀錄</button>
-        <button id="resetFormBtn" type="button">清空欄位</button>
-      </div>
+        <label class="check-row">
+          <input id="ownedInput" type="checkbox">
+          <span>已取得</span>
+        </label>
+
+        <div class="grid2">
+          <label>
+            <span>疊卡數量</span>
+            <input id="duplicateInput" type="number" min="0" max="99" inputmode="numeric" placeholder="0">
+          </label>
+          <label>
+            <span>升星等級</span>
+            <input id="rankInput" type="number" min="0" max="5" inputmode="numeric" placeholder="0">
+          </label>
+        </div>
+
+        <section class="core-panel" aria-label="芯核紀錄">
+          <div class="section-title">
+            <p class="label">芯核</p>
+            <h2>芯核紀錄與推薦</h2>
+          </div>
+
+          <div id="coreRecommendation" class="recommendation"></div>
+
+          <div class="core-grid">
+            <label>
+              <span>芯核位置</span>
+              <select id="coreSlotSelect"></select>
+            </label>
+            <label>
+              <span>主屬性</span>
+              <select id="coreMainSelect"></select>
+            </label>
+          </div>
+
+          <label>
+            <span>芯核品質</span>
+            <select id="coreQualitySelect">
+              <option value="">未選擇</option>
+              <option value="可用">可用</option>
+              <option value="良好">良好</option>
+              <option value="畢業">畢業</option>
+              <option value="待重刷">待重刷</option>
+            </select>
+          </label>
+
+          <div>
+            <p class="input-title">副屬性</p>
+            <div id="coreSubStats" class="chip-grid"></div>
+          </div>
+
+          <label>
+            <span>芯核備註</span>
+            <textarea id="coreNoteInput" rows="3" placeholder="例：暴擊率缺一條、先給日卡套使用"></textarea>
+          </label>
+        </section>
+
+        <div class="actions">
+          <button id="deleteCurrentBtn" type="button" class="danger">刪除此張紀錄</button>
+          <button id="resetFormBtn" type="button">清空欄位</button>
+        </div>
+      </section>
+
+      <section class="panel records" aria-label="已儲存紀錄">
+        <div class="records-head">
+          <div>
+            <p class="label">本機儲存</p>
+            <h2>已儲存紀錄</h2>
+          </div>
+          <input id="searchInput" type="search" placeholder="搜尋角色或卡名">
+        </div>
+        <div id="recordList" class="record-list"></div>
+        <p id="emptyState" class="empty">還沒有任何卡片紀錄。</p>
+      </section>
     </section>
 
-    <section class="panel records" aria-label="已儲存紀錄">
-      <div class="records-head">
-        <div>
-          <p class="label">本機儲存</p>
-          <h2>已儲存紀錄</h2>
+    <section id="triggersView" class="view">
+      <section class="panel trigger-editor" aria-label="新增隱藏觸發">
+        <div class="section-title">
+          <p class="label">Hidden</p>
+          <h2>隱藏觸發檢核</h2>
         </div>
-        <input id="searchInput" type="search" placeholder="搜尋角色或卡名">
-      </div>
-      <div id="recordList" class="record-list"></div>
-      <p id="emptyState" class="empty">還沒有任何卡片紀錄。</p>
+
+        <div class="grid2">
+          <label>
+            <span>角色</span>
+            <select id="triggerRoleSelect"></select>
+          </label>
+          <label>
+            <span>分類</span>
+            <select id="triggerCategorySelect">
+              <option value="互動">互動</option>
+              <option value="戰鬥">戰鬥</option>
+              <option value="約會">約會</option>
+              <option value="訊息">訊息</option>
+              <option value="活動">活動</option>
+              <option value="其他">其他</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>觸發名稱</span>
+          <input id="triggerTitleInput" type="text" placeholder="例：某語音、特殊訊息、隱藏互動">
+        </label>
+
+        <label>
+          <span>條件與紀錄</span>
+          <textarea id="triggerNoteInput" rows="3" placeholder="例：時間、卡片、服裝、戰鬥條件或嘗試紀錄"></textarea>
+        </label>
+
+        <label class="check-row">
+          <input id="triggerDoneInput" type="checkbox">
+          <span>已觸發</span>
+        </label>
+
+        <button id="addTriggerBtn" type="button" class="primary">加入檢核</button>
+      </section>
+
+      <section class="panel records" aria-label="隱藏觸發清單">
+        <div class="records-head">
+          <div>
+            <p class="label">本機儲存</p>
+            <h2>觸發清單</h2>
+          </div>
+          <input id="triggerSearchInput" type="search" placeholder="搜尋觸發或角色">
+        </div>
+        <div id="triggerList" class="record-list"></div>
+        <p id="triggerEmptyState" class="empty">還沒有任何隱藏觸發紀錄。</p>
+      </section>
     </section>
   </main>
 

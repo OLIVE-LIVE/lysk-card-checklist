@@ -35,7 +35,7 @@ button, input, select, textarea { font: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 h1, h2, p { margin: 0; }
@@ -67,6 +67,28 @@ h2 { font-size: 1.08rem; }
   font-size: 0.78rem;
 }
 
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tabs button {
+  min-height: 42px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.tabs button.is-active,
+button.primary {
+  border-color: rgba(46, 122, 120, 0.42);
+  background: var(--accent);
+  color: #fff;
+}
+
+.view { display: none; }
+.view.is-active { display: block; }
+
 .status {
   margin-bottom: 12px;
   padding: 10px 12px;
@@ -84,7 +106,7 @@ h2 { font-size: 1.08rem; }
   box-shadow: var(--shadow);
 }
 
-.picker, .editor, .records {
+.picker, .editor, .records, .trigger-editor {
   display: grid;
   gap: 13px;
   padding: 14px;
@@ -157,7 +179,7 @@ select:focus, input:focus, textarea:focus {
   accent-color: var(--accent);
 }
 
-.grid2, .actions, .record-actions {
+.grid2, .actions, .record-actions, .core-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -177,6 +199,61 @@ button.danger {
   border-color: rgba(180, 79, 98, 0.35);
   background: rgba(180, 79, 98, 0.1);
   color: var(--danger);
+}
+
+.section-title {
+  display: grid;
+  gap: 2px;
+}
+
+.core-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.recommendation {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(46, 122, 120, 0.18);
+  border-radius: 8px;
+  background: rgba(46, 122, 120, 0.07);
+  color: #2f4745;
+  font-size: 0.88rem;
+}
+
+.recommendation strong {
+  color: var(--accent-dark);
+}
+
+.input-title {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 0.86rem;
+}
+
+.chip.is-selected {
+  border-color: rgba(46, 122, 120, 0.44);
+  background: rgba(46, 122, 120, 0.13);
+  color: var(--accent-dark);
 }
 
 .records-head {
@@ -199,6 +276,10 @@ button.danger {
   background: #fff;
 }
 
+.record.no-image {
+  grid-template-columns: 1fr;
+}
+
 .record img {
   width: 54px;
   height: 54px;
@@ -211,6 +292,12 @@ button.danger {
 
 .record-title {
   font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.record-note {
+  color: var(--muted);
+  font-size: 0.86rem;
   overflow-wrap: anywhere;
 }
 
@@ -245,6 +332,11 @@ button.danger {
   color: var(--blue);
 }
 
+.badge.done {
+  background: rgba(46, 122, 120, 0.13);
+  color: var(--accent-dark);
+}
+
 .record-actions button {
   min-height: 38px;
   font-size: 0.9rem;
@@ -263,6 +355,6 @@ button.danger {
     align-items: end;
   }
   .editor { grid-template-columns: 1.1fr 0.9fr; }
-  .preview, .check-row, .editor > label:last-of-type, .actions { grid-column: 1 / -1; }
+  .preview, .check-row, .core-panel, .actions { grid-column: 1 / -1; }
   .record-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
