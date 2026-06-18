@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>戀與深空遊戲攻略檢核</title>
+  <title>戀與深空卡片收集檢核表</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <header class="top">
       <div>
         <p class="label">戀與深空</p>
-        <h1>遊戲攻略檢核</h1>
+        <h1>卡片收集檢核表</h1>
       </div>
       <div class="counter">
         <strong id="ownedCount">0</strong>
@@ -19,11 +19,11 @@
       </div>
     </header>
 
-    <nav class="tabs" aria-label="功能切換">
-      <button id="cardsTabBtn" type="button" class="is-active" data-view="cardsView">卡片紀錄</button>
-      <button id="calculatorTabBtn" type="button" data-view="calculatorView">屬性計算</button>
-      <button id="gachaTabBtn" type="button" data-view="gachaView">抽卡狀態</button>
-      <button id="triggersTabBtn" type="button" data-view="triggersView">隱藏觸發</button>
+    <nav class="tabs" aria-label="工具分頁">
+      <button type="button" class="is-active" data-view="cardsView">卡片紀錄</button>
+      <button type="button" data-view="calculatorView">屬性計算</button>
+      <button type="button" data-view="gachaView">抽卡狀態</button>
+      <button type="button" data-view="triggersView">隱藏觸發</button>
     </nav>
 
     <p id="statusBanner" class="status" hidden></p>
@@ -38,15 +38,15 @@
           <span>卡片</span>
           <select id="cardSelect"></select>
         </label>
-        <p id="cardDataInfo" class="data-info">正在載入卡片資料...</p>
+        <p id="cardDataInfo" class="data-info">正在讀取卡片資料...</p>
       </section>
 
-      <section class="panel editor" aria-label="目前卡片">
+      <section class="panel editor" aria-label="編輯卡片紀錄">
         <div class="preview">
           <img id="cardImage" alt="" loading="lazy">
           <div>
-            <p id="cardMeta" class="meta">請選擇卡片</p>
-            <h2 id="cardTitle">尚未選擇</h2>
+            <p id="cardMeta" class="meta">請選擇角色與卡片</p>
+            <h2 id="cardTitle">尚未選擇卡片</h2>
           </div>
         </div>
 
@@ -66,73 +66,77 @@
           </label>
         </div>
 
-        <section class="core-panel" aria-label="芯核紀錄">
-          <div class="section-title">
-            <p class="label">芯核</p>
-            <h2>芯核紀錄與推薦</h2>
-          </div>
-
-          <div id="coreRecommendation" class="recommendation"></div>
-
-          <div class="core-grid">
-            <label>
-              <span>芯核位置</span>
-              <select id="coreSlotSelect"></select>
-            </label>
-            <label>
-              <span>主屬性</span>
-              <select id="coreMainSelect"></select>
-            </label>
-          </div>
-
-          <label>
-            <span>芯核品質</span>
-            <select id="coreQualitySelect">
-              <option value="">未選擇</option>
-              <option value="可用">可用</option>
-              <option value="良好">良好</option>
-              <option value="畢業">畢業</option>
-              <option value="待重刷">待重刷</option>
-            </select>
-          </label>
-
-          <div>
-            <p class="input-title">副屬性</p>
-            <div id="coreSubStats" class="chip-grid"></div>
-          </div>
-
-          <label>
-            <span>芯核備註</span>
-            <textarea id="coreNoteInput" rows="3" placeholder="例：暴擊率缺一條、先給日卡套使用"></textarea>
-          </label>
-        </section>
-
         <div class="actions">
-          <button id="deleteCurrentBtn" type="button" class="danger">刪除此張紀錄</button>
-          <button id="resetFormBtn" type="button">清空欄位</button>
+          <button id="deleteCurrentBtn" type="button" class="danger">刪除這張紀錄</button>
+          <button id="resetFormBtn" type="button">清空目前表單</button>
         </div>
       </section>
 
-      <section class="panel records" aria-label="已儲存紀錄">
+      <section class="panel records" aria-label="已記錄清單">
         <div class="records-head">
           <div>
-            <p class="label">本機儲存</p>
-            <h2>已儲存紀錄</h2>
+            <p class="label">我的紀錄</p>
+            <h2>已記錄卡片</h2>
           </div>
-          <input id="searchInput" type="search" placeholder="搜尋角色或卡名">
+          <input id="searchInput" type="search" placeholder="搜尋角色或卡片">
         </div>
         <div id="recordList" class="record-list"></div>
-        <p id="emptyState" class="empty">尚未新增任何收集紀錄。上方選卡後勾選或填芯核，就會出現在這裡。</p>
+        <p id="emptyState" class="empty">尚未新增任何收集紀錄。選卡後勾選或輸入疊卡、升星就會出現在這裡。</p>
       </section>
     </section>
 
     <section id="calculatorView" class="view">
-      <section class="panel trigger-editor" aria-label="屬性計算器">
+      <section class="panel tool-panel" aria-label="屬性計算器">
         <div class="section-title">
           <p class="label">Calculator</p>
           <h2>屬性計算器</h2>
         </div>
 
+        <div class="grid2">
+          <label>
+            <span>角色</span>
+            <select id="calcRoleSelect"></select>
+          </label>
+          <label>
+            <span>卡片</span>
+            <select id="calcCardSelect"></select>
+          </label>
+        </div>
+
+        <div class="grid3">
+          <label>
+            <span>等級</span>
+            <input id="calcLevelInput" type="number" min="1" max="80" inputmode="numeric" value="1">
+          </label>
+          <label>
+            <span>進階</span>
+            <select id="calcAdvanceSelect">
+              <option value="0">0 階</option>
+              <option value="1">1 階</option>
+              <option value="2">2 階</option>
+              <option value="3">3 階</option>
+              <option value="4">4 階</option>
+              <option value="5">5 階</option>
+              <option value="6">6 階</option>
+            </select>
+          </label>
+          <label>
+            <span>主要輸出屬性</span>
+            <select id="calcFocusSelect">
+              <option value="atk">攻擊</option>
+              <option value="hp">生命</option>
+              <option value="def">防禦</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="coreRecommendation" class="recommendation"></div>
+
+        <div class="section-title">
+          <p class="label">Base</p>
+          <h2>卡片基礎值</h2>
+        </div>
+        <p class="hint">請填這張卡在目前等級與進階下的面板基礎值；下方芯核會自動加總。</p>
         <div class="grid3">
           <label>
             <span>基礎生命</span>
@@ -148,209 +152,154 @@
           </label>
         </div>
 
-        <div class="grid3">
-          <label>
-            <span>生命加成%</span>
-            <input id="hpPercentInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>攻擊加成%</span>
-            <input id="atkPercentInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>防禦加成%</span>
-            <input id="defPercentInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-        </div>
+        <div class="core-columns">
+          <section class="core-panel" aria-label="芯核一">
+            <div class="section-title compact">
+              <p class="label">Core A</p>
+              <h2>芯核 1</h2>
+            </div>
+            <label>
+              <span>芯核位置</span>
+              <select id="coreSlotASelect"></select>
+            </label>
+            <div class="table-scroll">
+              <table class="stat-table">
+                <thead>
+                  <tr>
+                    <th>屬性詞條</th>
+                    <th>初始值</th>
+                    <th>提升值/次</th>
+                    <th>成長次數</th>
+                    <th>彙總</th>
+                  </tr>
+                </thead>
+                <tbody id="coreRowsA"></tbody>
+              </table>
+            </div>
+          </section>
 
-        <div class="grid3">
-          <label>
-            <span>固定生命</span>
-            <input id="flatHpInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>固定攻擊</span>
-            <input id="flatAtkInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>固定防禦</span>
-            <input id="flatDefInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-        </div>
-
-        <div class="grid3">
-          <label>
-            <span>暴擊率%</span>
-            <input id="critRateInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>暴擊傷害%</span>
-            <input id="critDmgInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>傷害提升%</span>
-            <input id="dmgBonusInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-        </div>
-
-        <div class="grid2">
-          <label>
-            <span>虛弱增傷%</span>
-            <input id="weakBonusInput" type="number" inputmode="decimal" placeholder="0">
-          </label>
-          <label>
-            <span>隊伍主屬性</span>
-            <select id="calcFocusSelect">
-              <option value="atk">攻擊</option>
-              <option value="hp">生命</option>
-              <option value="def">防禦</option>
-            </select>
-          </label>
+          <section class="core-panel" aria-label="芯核二">
+            <div class="section-title compact">
+              <p class="label">Core B</p>
+              <h2>芯核 2</h2>
+            </div>
+            <label>
+              <span>芯核位置</span>
+              <select id="coreSlotBSelect"></select>
+            </label>
+            <div class="table-scroll">
+              <table class="stat-table">
+                <thead>
+                  <tr>
+                    <th>屬性詞條</th>
+                    <th>初始值</th>
+                    <th>提升值/次</th>
+                    <th>成長次數</th>
+                    <th>彙總</th>
+                  </tr>
+                </thead>
+                <tbody id="coreRowsB"></tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
         <div id="calculatorResult" class="result-grid"></div>
-        <button id="resetCalculatorBtn" type="button">清空計算器</button>
+        <button id="resetCalculatorBtn" type="button">清空屬性計算</button>
       </section>
     </section>
 
     <section id="gachaView" class="view">
-      <section class="panel trigger-editor" aria-label="新增抽卡狀態">
+      <section class="panel tool-panel" aria-label="抽卡狀態判定工具">
         <div class="section-title">
-          <p class="label">Wish</p>
-          <h2>抽卡狀態</h2>
+          <p class="label">Gacha Status</p>
+          <h2>抽卡狀態判定工具</h2>
         </div>
 
         <div class="grid2">
           <label>
-            <span>卡池名稱</span>
-            <input id="bannerNameInput" type="text" placeholder="例：限定雙人池、常駐池">
+            <span>多少抽內必得 5 星</span>
+            <input id="remainingTo5StarInput" type="number" min="1" max="70" inputmode="numeric" value="1">
           </label>
           <label>
-            <span>卡池類型</span>
-            <select id="bannerTypeSelect">
-              <option value="限定">限定</option>
-              <option value="常駐">常駐</option>
-              <option value="活動">活動</option>
-              <option value="其他">其他</option>
+            <span>上次抽卡的卡池</span>
+            <select id="currentPoolTypeSelect">
+              <option value="single">單人月卡池</option>
+              <option value="daily">日卡池</option>
+              <option value="triple">多人月卡池</option>
             </select>
           </label>
         </div>
 
-        <div class="grid3">
-          <label>
-            <span>已墊抽數</span>
-            <input id="pityInput" type="number" min="0" inputmode="numeric" placeholder="0">
-          </label>
-          <label>
-            <span>目標保底</span>
-            <input id="pityTargetInput" type="number" min="1" inputmode="numeric" value="70">
-          </label>
-          <label>
-            <span>累計抽數</span>
-            <input id="totalPullsInput" type="number" min="0" inputmode="numeric" placeholder="0">
-          </label>
-        </div>
-
-        <div class="grid3">
-          <label>
-            <span>鑽石</span>
-            <input id="diamondInput" type="number" min="0" inputmode="numeric" placeholder="0">
-          </label>
-          <label>
-            <span>票券</span>
-            <input id="ticketInput" type="number" min="0" inputmode="numeric" placeholder="0">
-          </label>
-          <label>
-            <span>單抽鑽石</span>
-            <input id="diamondPerPullInput" type="number" min="1" inputmode="numeric" value="150">
-          </label>
-        </div>
-
-        <label class="check-row">
-          <input id="guaranteeInput" type="checkbox">
-          <span>下一張目標保底</span>
+        <label>
+          <span>上次獲得的 5 星</span>
+          <select id="lastObtainedCardSelect"></select>
         </label>
 
         <label>
-          <span>備註</span>
-          <textarea id="bannerNoteInput" rows="3" placeholder="例：目標卡、歪卡紀錄、預計補抽"></textarea>
+          <span>下次卡池類型</span>
+          <select id="nextPoolTypeSelect">
+            <option value="same">繼續本次卡池（如有定向則選定向）</option>
+            <option value="single">單人月卡池</option>
+            <option value="daily">日卡池</option>
+            <option value="triple">多人月卡池</option>
+          </select>
         </label>
 
-        <div id="gachaEstimate" class="recommendation"></div>
-        <button id="addBannerBtn" type="button" class="primary">加入卡池狀態</button>
-      </section>
-
-      <section class="panel records" aria-label="抽卡狀態清單">
-        <div class="records-head">
-          <div>
-            <p class="label">本機儲存</p>
-            <h2>卡池清單</h2>
-          </div>
-          <input id="bannerSearchInput" type="search" placeholder="搜尋卡池">
-        </div>
-        <div id="bannerList" class="record-list"></div>
-        <p id="bannerEmptyState" class="empty">尚未新增抽卡狀態。填寫卡池資料後按「加入卡池狀態」。</p>
+        <div id="gachaResult" class="gacha-result"></div>
       </section>
     </section>
 
     <section id="triggersView" class="view">
-      <section class="panel trigger-editor" aria-label="新增隱藏觸發">
+      <section class="panel tool-panel" aria-label="隱藏觸發檢核">
         <div class="section-title">
-          <p class="label">Hidden</p>
+          <p class="label">Hidden Trigger</p>
           <h2>隱藏觸發檢核</h2>
         </div>
+        <p id="triggerDataInfo" class="data-info">正在讀取隱藏觸發資料...</p>
 
-        <div class="grid2">
+        <div class="grid3">
           <label>
             <span>角色</span>
             <select id="triggerRoleSelect"></select>
           </label>
           <label>
-            <span>分類</span>
-            <select id="triggerCategorySelect">
-              <option value="互動">互動</option>
-              <option value="戰鬥">戰鬥</option>
-              <option value="約會">約會</option>
-              <option value="訊息">訊息</option>
-              <option value="活動">活動</option>
-              <option value="其他">其他</option>
+            <span>系統</span>
+            <select id="triggerCategorySelect"></select>
+          </label>
+          <label>
+            <span>完成狀態</span>
+            <select id="triggerStatusSelect">
+              <option value="all">全部</option>
+              <option value="done">已完成</option>
+              <option value="todo">未完成</option>
             </select>
           </label>
         </div>
 
-        <label>
-          <span>觸發名稱</span>
-          <input id="triggerTitleInput" type="text" placeholder="例：某語音、特殊訊息、隱藏互動">
-        </label>
+        <input id="triggerSearchInput" type="search" placeholder="搜尋條件、獲得內容或角色">
 
-        <label>
-          <span>條件與紀錄</span>
-          <textarea id="triggerNoteInput" rows="3" placeholder="例：時間、卡片、服裝、戰鬥條件或嘗試紀錄"></textarea>
-        </label>
-
-        <label class="check-row">
-          <input id="triggerDoneInput" type="checkbox">
-          <span>已觸發</span>
-        </label>
-
-        <button id="addTriggerBtn" type="button" class="primary">加入檢核</button>
+        <div class="actions">
+          <button id="checkVisibleTriggersBtn" type="button">勾選目前顯示</button>
+          <button id="resetVisibleTriggersBtn" type="button" class="danger">取消目前顯示</button>
+        </div>
       </section>
 
       <section class="panel records" aria-label="隱藏觸發清單">
         <div class="records-head">
           <div>
-            <p class="label">本機儲存</p>
-            <h2>觸發清單</h2>
+            <p class="label">我的進度</p>
+            <h2 id="triggerProgressTitle">觸發清單</h2>
           </div>
-          <input id="triggerSearchInput" type="search" placeholder="搜尋觸發或角色">
         </div>
-        <div id="triggerList" class="record-list"></div>
-        <p id="triggerEmptyState" class="empty">尚未新增隱藏觸發檢核。輸入名稱與條件後按「加入檢核」。</p>
+        <div id="triggerList" class="record-list trigger-list"></div>
+        <p id="triggerEmptyState" class="empty">目前沒有符合篩選條件的隱藏觸發。</p>
       </section>
     </section>
   </main>
 
   <script src="cards.js"></script>
+  <script src="hidden-triggers.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,21 +1,40 @@
 (function () {
-  var CARD_STORAGE_KEY = "lysk-card-checklist:v2";
-  var TRIGGER_STORAGE_KEY = "lysk-hidden-triggers:v1";
-  var GACHA_STORAGE_KEY = "lysk-gacha-status:v1";
-  var CALCULATOR_STORAGE_KEY = "lysk-attribute-calculator:v1";
-  var cards = window.LYSK_CARDS && window.LYSK_CARDS.length ? window.LYSK_CARDS : [];
+  var CARD_STORAGE_KEY = "lysk-card-checklist:v3";
+  var LEGACY_CARD_STORAGE_KEY = "lysk-card-checklist:v2";
+  var TRIGGER_STORAGE_KEY = "lysk-hidden-trigger-checks:v2";
+  var CALCULATOR_STORAGE_KEY = "lysk-attribute-calculator:v2";
+  var GACHA_STORAGE_KEY = "lysk-gacha-calculator:v2";
+
+  var cards = window.LYSK_CARDS || [];
+  var hiddenTriggers = window.LYSK_HIDDEN_TRIGGERS || [];
   var records = {};
-  var triggers = [];
-  var banners = [];
+  var triggerChecks = {};
   var currentCard = null;
   var storage = createStorage();
 
-  var CORE_SUB_STATS = ["暴擊率", "暴擊傷害", "攻擊%", "生命%", "防禦%", "傷害提升", "虛弱增傷", "誓約回能", "加速回能"];
-  var CORE_MAIN_STATS = ["", "攻擊%", "生命%", "防禦%", "暴擊率", "暴擊傷害", "誓約回能", "加速回能", "虛弱增傷"];
-  var CORE_SLOT_OPTIONS = {
-    "日冕": ["", "α", "β", "α + β"],
-    "月晖": ["", "γ", "δ", "γ + δ"],
-    "月暉": ["", "γ", "δ", "γ + δ"]
+  var STAT_OPTIONS = [
+    "生命", "攻擊", "防禦", "生命%", "攻擊%", "防禦%",
+    "暴擊率", "暴擊傷害", "傷害加成", "虛弱增傷", "誓約增傷", "能量恢復"
+  ];
+  var CORE_SLOTS = ["", "α", "β", "γ", "δ"];
+  var POOL_LABELS = {
+    single: "單人月卡池",
+    daily: "日卡池",
+    triple: "多人月卡池",
+    same: "繼續本次卡池"
+  };
+  var LAST_CARD_OPTIONS = {
+    normal: [
+      ["up_no_target", "UP 卡"],
+      ["standard_no_target", "常駐卡"]
+    ],
+    triple: [
+      ["targeted", "UP 卡是定向"],
+      ["up_with_target", "UP 卡非定向（當時已選定向）"],
+      ["up_no_target", "UP 卡非定向（當時未選定向）"],
+      ["standard_with_target", "常駐卡（當時已選定向）"],
+      ["standard_no_target", "常駐卡（當時未選定向）"]
+    ]
   };
 
   var els = {
@@ -31,60 +50,42 @@
     owned: document.getElementById("ownedInput"),
     duplicate: document.getElementById("duplicateInput"),
     rank: document.getElementById("rankInput"),
-    coreRecommendation: document.getElementById("coreRecommendation"),
-    coreSlot: document.getElementById("coreSlotSelect"),
-    coreMain: document.getElementById("coreMainSelect"),
-    coreQuality: document.getElementById("coreQualitySelect"),
-    coreSubStats: document.getElementById("coreSubStats"),
-    coreNote: document.getElementById("coreNoteInput"),
     deleteCurrent: document.getElementById("deleteCurrentBtn"),
     resetForm: document.getElementById("resetFormBtn"),
     search: document.getElementById("searchInput"),
     list: document.getElementById("recordList"),
     empty: document.getElementById("emptyState"),
-    triggerRole: document.getElementById("triggerRoleSelect"),
-    triggerCategory: document.getElementById("triggerCategorySelect"),
-    triggerTitle: document.getElementById("triggerTitleInput"),
-    triggerNote: document.getElementById("triggerNoteInput"),
-    triggerDone: document.getElementById("triggerDoneInput"),
-    addTrigger: document.getElementById("addTriggerBtn"),
-    triggerSearch: document.getElementById("triggerSearchInput"),
-    triggerList: document.getElementById("triggerList"),
-    triggerEmpty: document.getElementById("triggerEmptyState"),
     cardDataInfo: document.getElementById("cardDataInfo"),
+    calcRole: document.getElementById("calcRoleSelect"),
+    calcCard: document.getElementById("calcCardSelect"),
+    calcLevel: document.getElementById("calcLevelInput"),
+    calcAdvance: document.getElementById("calcAdvanceSelect"),
+    calcFocus: document.getElementById("calcFocusSelect"),
+    coreRecommendation: document.getElementById("coreRecommendation"),
+    baseHp: document.getElementById("baseHpInput"),
+    baseAtk: document.getElementById("baseAtkInput"),
+    baseDef: document.getElementById("baseDefInput"),
+    coreSlotA: document.getElementById("coreSlotASelect"),
+    coreSlotB: document.getElementById("coreSlotBSelect"),
+    coreRowsA: document.getElementById("coreRowsA"),
+    coreRowsB: document.getElementById("coreRowsB"),
     calculatorResult: document.getElementById("calculatorResult"),
     resetCalculator: document.getElementById("resetCalculatorBtn"),
-    calcInputs: [
-      document.getElementById("baseHpInput"),
-      document.getElementById("baseAtkInput"),
-      document.getElementById("baseDefInput"),
-      document.getElementById("hpPercentInput"),
-      document.getElementById("atkPercentInput"),
-      document.getElementById("defPercentInput"),
-      document.getElementById("flatHpInput"),
-      document.getElementById("flatAtkInput"),
-      document.getElementById("flatDefInput"),
-      document.getElementById("critRateInput"),
-      document.getElementById("critDmgInput"),
-      document.getElementById("dmgBonusInput"),
-      document.getElementById("weakBonusInput"),
-      document.getElementById("calcFocusSelect")
-    ],
-    bannerName: document.getElementById("bannerNameInput"),
-    bannerType: document.getElementById("bannerTypeSelect"),
-    pity: document.getElementById("pityInput"),
-    pityTarget: document.getElementById("pityTargetInput"),
-    totalPulls: document.getElementById("totalPullsInput"),
-    diamonds: document.getElementById("diamondInput"),
-    tickets: document.getElementById("ticketInput"),
-    diamondPerPull: document.getElementById("diamondPerPullInput"),
-    guarantee: document.getElementById("guaranteeInput"),
-    bannerNote: document.getElementById("bannerNoteInput"),
-    gachaEstimate: document.getElementById("gachaEstimate"),
-    addBanner: document.getElementById("addBannerBtn"),
-    bannerSearch: document.getElementById("bannerSearchInput"),
-    bannerList: document.getElementById("bannerList"),
-    bannerEmpty: document.getElementById("bannerEmptyState")
+    remainingTo5Star: document.getElementById("remainingTo5StarInput"),
+    currentPool: document.getElementById("currentPoolTypeSelect"),
+    lastObtained: document.getElementById("lastObtainedCardSelect"),
+    nextPool: document.getElementById("nextPoolTypeSelect"),
+    gachaResult: document.getElementById("gachaResult"),
+    triggerDataInfo: document.getElementById("triggerDataInfo"),
+    triggerRole: document.getElementById("triggerRoleSelect"),
+    triggerCategory: document.getElementById("triggerCategorySelect"),
+    triggerStatus: document.getElementById("triggerStatusSelect"),
+    triggerSearch: document.getElementById("triggerSearchInput"),
+    checkVisibleTriggers: document.getElementById("checkVisibleTriggersBtn"),
+    resetVisibleTriggers: document.getElementById("resetVisibleTriggersBtn"),
+    triggerProgressTitle: document.getElementById("triggerProgressTitle"),
+    triggerList: document.getElementById("triggerList"),
+    triggerEmpty: document.getElementById("triggerEmptyState")
   };
 
   function createStorage() {
@@ -112,32 +113,43 @@
     els.status.hidden = false;
   }
 
-  function cardId(card) {
-    return card.role + "::" + card.name;
+  function trim(value) {
+    return String(value || "").replace(/^\s+|\s+$/g, "");
   }
 
-  function replaceChildren(parent, children) {
-    while (parent.firstChild) parent.removeChild(parent.firstChild);
-    for (var i = 0; i < children.length; i += 1) parent.appendChild(children[i]);
+  function normalizeSearch(value) {
+    var map = {
+      "話": "话", "與": "与", "雙": "双", "張": "张", "觸": "触", "發": "发",
+      "獲": "获", "隱": "隐", "錄": "录", "條": "条", "覺": "觉", "體": "体",
+      "寫": "写", "臺": "台", "檢": "检", "關": "关", "選": "选", "擇": "择",
+      "戰": "战", "貓": "猫", "喵": "喵", "願": "愿", "裡": "里", "為": "为"
+    };
+    return String(value || "").toLowerCase().replace(/[話與雙張觸發獲隱錄條覺體寫臺檢關選擇戰貓願裡為]/g, function (ch) {
+      return map[ch] || ch;
+    });
   }
 
-  function option(value, text) {
-    var opt = document.createElement("option");
-    opt.value = value;
-    opt.textContent = text || value || "未選擇";
-    return opt;
+  function num(value) {
+    var parsed = Number(value);
+    return isFinite(parsed) ? parsed : 0;
   }
 
-  function uniqueRoles() {
-    var seen = {};
-    var roles = [];
-    for (var i = 0; i < cards.length; i += 1) {
-      if (cards[i].role && !seen[cards[i].role]) {
-        seen[cards[i].role] = true;
-        roles.push(cards[i].role);
-      }
-    }
-    return roles;
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function percent(value) {
+    return num(value) / 100;
+  }
+
+  function formatNumber(value) {
+    if (!isFinite(value)) return "0";
+    return Math.round(value * 100) / 100 + "";
+  }
+
+  function formatInteger(value) {
+    if (!isFinite(value)) return "0";
+    return Math.round(value).toLocaleString("zh-Hant");
   }
 
   function loadJSON(key, fallback) {
@@ -152,83 +164,51 @@
     try {
       storage.write(key, JSON.stringify(value));
     } catch (error) {
-      showStatus("這個瀏覽器目前無法寫入 localStorage，本次資料只會暫存在畫面上。");
+      showStatus("資料暫時無法寫入 localStorage，請確認瀏覽器沒有封鎖本機儲存。");
     }
   }
 
-  function initSelectors() {
-    if (!cards.length) {
-      showStatus("卡片資料沒有載入。請確認上傳時有包含 cards.js。");
-      if (els.cardDataInfo) els.cardDataInfo.textContent = "卡片資料未載入。";
-      disableCardForm(true);
-      return;
-    }
-
-    var roles = uniqueRoles();
-    if (els.cardDataInfo) els.cardDataInfo.textContent = "已載入 " + cards.length + " 張卡片資料。";
-    replaceChildren(els.character, roles.map(function (role) { return option(role, role); }));
-    replaceChildren(els.triggerRole, [option("通用", "通用")].concat(roles.map(function (role) { return option(role, role); })));
-    replaceChildren(els.coreMain, CORE_MAIN_STATS.map(function (stat) { return option(stat, stat || "未選擇"); }));
-    renderCoreSubStats([]);
-    updateCardOptions();
+  function replaceChildren(parent, children) {
+    while (parent.firstChild) parent.removeChild(parent.firstChild);
+    for (var i = 0; i < children.length; i += 1) parent.appendChild(children[i]);
   }
 
-  function disableCardForm(disabled) {
-    var controls = [els.character, els.card, els.owned, els.duplicate, els.rank, els.coreSlot, els.coreMain, els.coreQuality, els.coreNote, els.deleteCurrent, els.resetForm, els.search];
-    for (var i = 0; i < controls.length; i += 1) if (controls[i]) controls[i].disabled = disabled;
+  function option(value, text) {
+    var opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = text || value || "未選擇";
+    return opt;
+  }
+
+  function unique(values) {
+    var seen = {};
+    var result = [];
+    for (var i = 0; i < values.length; i += 1) {
+      if (values[i] && !seen[values[i]]) {
+        seen[values[i]] = true;
+        result.push(values[i]);
+      }
+    }
+    return result;
+  }
+
+  function cardId(card) {
+    return card.role + "::" + card.name;
+  }
+
+  function rolesFromCards() {
+    return unique(cards.map(function (card) { return card.role; }));
   }
 
   function cardsForRole(role) {
-    var list = [];
-    for (var i = 0; i < cards.length; i += 1) if (cards[i].role === role) list.push(cards[i]);
-    return list;
+    return cards.filter(function (card) { return card.role === role; });
   }
 
-  function updateCardOptions() {
-    var roleCards = cardsForRole(els.character.value);
-    replaceChildren(els.card, roleCards.map(function (card) { return option(cardId(card), card.name); }));
-    currentCard = roleCards[0] || null;
-    if (currentCard) els.card.value = cardId(currentCard);
-    renderEditor();
-  }
-
-  function selectCard() {
-    currentCard = null;
+  function findCardById(id) {
     for (var i = 0; i < cards.length; i += 1) {
-      if (cardId(cards[i]) === els.card.value) {
-        currentCard = cards[i];
-        break;
-      }
+      if (cardId(cards[i]) === id) return cards[i];
     }
-    renderEditor();
-  }
-
-  function emptyCore() {
-    return { slot: "", main: "", quality: "", subStats: [], note: "" };
-  }
-
-  function normalizeCore(core) {
-    if (!core) return emptyCore();
-    if (typeof core === "string") {
-      var legacy = emptyCore();
-      legacy.note = core;
-      return legacy;
-    }
-    return {
-      slot: core.slot || "",
-      main: core.main || "",
-      quality: core.quality || "",
-      subStats: Array.isArray(core.subStats) ? core.subStats : [],
-      note: core.note || ""
-    };
-  }
-
-  function getCurrentRecord() {
-    return currentCard ? records[cardId(currentCard)] || {} : {};
-  }
-
-  function getCurrentCore() {
-    return normalizeCore(getCurrentRecord().core);
+    return null;
   }
 
   function setImage(img, src, alt) {
@@ -244,156 +224,108 @@
     }
   }
 
-  function renderEditor() {
-    var record = getCurrentRecord();
-    var core = normalizeCore(record.core);
-    if (!currentCard) {
-      setImage(els.image, "", "");
-      els.title.textContent = "尚未選擇";
-      els.meta.textContent = "請選擇卡片";
-      els.owned.checked = false;
-      els.duplicate.value = "";
-      els.rank.value = "";
-      renderCoreInputs(emptyCore());
-      return;
-    }
-
-    setImage(els.image, currentCard.image, currentCard.name + " 圖示");
-    els.title.textContent = currentCard.name;
-    els.meta.textContent = currentCard.role + " / " + currentCard.rarity + "星 / " + currentCard.color + " / " + currentCard.type + " / " + currentCard.talent + " / " + currentCard.availability;
-    els.owned.checked = !!record.owned;
-    els.duplicate.value = record.duplicate || "";
-    els.rank.value = record.rank || "";
-    renderCoreRecommendation();
-    renderCoreInputs(core);
-  }
-
-  function renderCoreInputs(core) {
-    var slots = CORE_SLOT_OPTIONS[currentCard && currentCard.type] || ["", "α", "β", "γ", "δ"];
-    replaceChildren(els.coreSlot, slots.map(function (slot) { return option(slot, slot || "未選擇"); }));
-    els.coreSlot.value = core.slot || "";
-    els.coreMain.value = core.main || "";
-    els.coreQuality.value = core.quality || "";
-    els.coreNote.value = core.note || "";
-    renderCoreSubStats(core.subStats || []);
-  }
-
-  function renderCoreSubStats(selected) {
-    var chosen = {};
-    for (var i = 0; i < selected.length; i += 1) chosen[selected[i]] = true;
-    var buttons = CORE_SUB_STATS.map(function (stat) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = chosen[stat] ? "chip is-selected" : "chip";
-      btn.textContent = stat;
-      btn.onclick = function () {
-        var core = readCoreInputs();
-        var index = core.subStats.indexOf(stat);
-        if (index >= 0) core.subStats.splice(index, 1);
-        else core.subStats.push(stat);
-        applyCoreToInputs(core);
-        saveCurrent();
-      };
-      return btn;
-    });
-    replaceChildren(els.coreSubStats, buttons);
-  }
-
-  function recommendedMain(card) {
-    if (!card) return "";
-    if (card.talent === "攻击") return "攻擊%";
-    if (card.talent === "防御") return "防禦%";
-    if (card.talent === "生命") return "生命%";
-    return "";
-  }
-
-  function pairCandidates(card) {
-    if (!card || card.type !== "日冕") return [];
-    return cards.filter(function (item) {
-      return item !== card &&
-        item.role === card.role &&
-        item.type === "日冕" &&
-        item.rarity === card.rarity &&
-        item.color === card.color &&
-        item.talent === card.talent;
-    }).slice(0, 3);
-  }
-
-  function renderCoreRecommendation() {
-    if (!currentCard) {
-      els.coreRecommendation.textContent = "";
-      return;
-    }
-
-    var main = recommendedMain(currentCard) || "依隊伍需求";
-    var slots = currentCard.type === "日冕" ? "α / β" : "γ / δ";
-    var pairs = pairCandidates(currentCard).map(function (card) { return card.name; }).join("、");
-    var lines = [
-      "<strong>" + currentCard.type + "建議</strong>：位置 " + slots + "，主屬性優先 " + main + "。",
-      "<strong>副屬性</strong>：暴擊率、暴擊傷害、傷害提升，再補 " + main + "。"
-    ];
-
-    if (currentCard.type === "日冕") {
-      lines.push("<strong>日卡套</strong>：" + (pairs ? "可搭配 " + pairs + "，" : "") + "先湊同角色同星譜需求，再挑 α / β 芯核。");
-    }
-
-    els.coreRecommendation.innerHTML = lines.map(function (line) { return "<p>" + line + "</p>"; }).join("");
-  }
-
-  function readCoreInputs() {
+  function sanitizeRecord(record) {
     return {
-      slot: els.coreSlot.value,
-      main: els.coreMain.value,
-      quality: els.coreQuality.value,
-      subStats: getSelectedSubStats(),
-      note: trim(els.coreNote.value)
+      owned: !!record.owned,
+      duplicate: normalizeNumber(record.duplicate),
+      rank: normalizeNumber(record.rank),
+      updatedAt: record.updatedAt || new Date().toISOString()
     };
   }
 
-  function applyCoreToInputs(core) {
-    els.coreSlot.value = core.slot || "";
-    els.coreMain.value = core.main || "";
-    els.coreQuality.value = core.quality || "";
-    els.coreNote.value = core.note || "";
-    renderCoreSubStats(core.subStats || []);
-  }
-
-  function getSelectedSubStats() {
-    var stats = [];
-    var buttons = els.coreSubStats.querySelectorAll(".chip.is-selected");
-    for (var i = 0; i < buttons.length; i += 1) stats.push(buttons[i].textContent);
-    return stats;
-  }
-
   function normalizeNumber(value) {
-    if (value === "") return "";
-    var num = parseInt(value, 10);
-    if (isNaN(num) || num < 0) return "";
-    return String(num);
-  }
-
-  function trim(value) {
-    return String(value || "").replace(/^\s+|\s+$/g, "");
-  }
-
-  function coreHasData(core) {
-    return !!(core.slot || core.main || core.quality || core.note || (core.subStats && core.subStats.length));
+    if (value === "" || value === undefined || value === null) return "";
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) || parsed < 0 ? "" : String(parsed);
   }
 
   function hasData(record) {
-    return !!(record.owned || record.duplicate || record.rank || coreHasData(normalizeCore(record.core)));
+    return !!(record.owned || record.duplicate || record.rank);
+  }
+
+  function migrateRecords() {
+    var current = loadJSON(CARD_STORAGE_KEY, null);
+    if (current) return current;
+
+    var legacy = loadJSON(LEGACY_CARD_STORAGE_KEY, {});
+    var migrated = {};
+    for (var id in legacy) {
+      if (!legacy.hasOwnProperty(id)) continue;
+      var record = sanitizeRecord(legacy[id]);
+      if (hasData(record)) migrated[id] = record;
+    }
+    saveJSON(CARD_STORAGE_KEY, migrated);
+    return migrated;
+  }
+
+  function initCardSelectors() {
+    if (!cards.length) {
+      showStatus("找不到卡片資料，請確認 cards.js 有一起上傳。");
+      els.cardDataInfo.textContent = "卡片資料未載入";
+      return;
+    }
+
+    var roles = rolesFromCards();
+    replaceChildren(els.character, roles.map(function (role) { return option(role, role); }));
+    replaceChildren(els.calcRole, roles.map(function (role) { return option(role, role); }));
+    els.cardDataInfo.textContent = "已載入 " + cards.length + " 張卡片";
+    updateCardOptions();
+    updateCalcCardOptions();
+  }
+
+  function updateCardOptions() {
+    var list = cardsForRole(els.character.value);
+    replaceChildren(els.card, list.map(function (card) { return option(cardId(card), card.name); }));
+    currentCard = list[0] || null;
+    if (currentCard) els.card.value = cardId(currentCard);
+    renderEditor();
+  }
+
+  function selectCard() {
+    currentCard = findCardById(els.card.value);
+    renderEditor();
+  }
+
+  function getCurrentRecord() {
+    return currentCard ? records[cardId(currentCard)] || {} : {};
+  }
+
+  function renderEditor() {
+    var record = getCurrentRecord();
+    if (!currentCard) {
+      setImage(els.image, "", "");
+      els.title.textContent = "尚未選擇卡片";
+      els.meta.textContent = "請選擇角色與卡片";
+      els.owned.checked = false;
+      els.duplicate.value = "";
+      els.rank.value = "";
+      return;
+    }
+
+    setImage(els.image, currentCard.image, currentCard.name);
+    els.title.textContent = currentCard.name;
+    els.meta.textContent = [
+      currentCard.role,
+      currentCard.rarity + "星",
+      currentCard.color,
+      currentCard.type,
+      currentCard.talent,
+      currentCard.availability
+    ].filter(Boolean).join(" / ");
+    els.owned.checked = !!record.owned;
+    els.duplicate.value = record.duplicate || "";
+    els.rank.value = record.rank || "";
   }
 
   function saveCurrent() {
     if (!currentCard) return;
     var id = cardId(currentCard);
-    var record = {
+    var record = sanitizeRecord({
       owned: els.owned.checked,
-      duplicate: normalizeNumber(els.duplicate.value),
-      rank: normalizeNumber(els.rank.value),
-      core: readCoreInputs(),
+      duplicate: els.duplicate.value,
+      rank: els.rank.value,
       updatedAt: new Date().toISOString()
-    };
+    });
     if (hasData(record)) records[id] = record;
     else delete records[id];
     saveJSON(CARD_STORAGE_KEY, records);
@@ -404,17 +336,15 @@
     els.owned.checked = false;
     els.duplicate.value = "";
     els.rank.value = "";
-    applyCoreToInputs(emptyCore());
     saveCurrent();
-    renderEditor();
   }
 
   function deleteCurrent() {
     if (!currentCard) return;
     delete records[cardId(currentCard)];
     saveJSON(CARD_STORAGE_KEY, records);
-    renderRecords();
     renderEditor();
+    renderRecords();
   }
 
   function addBadge(parent, text, type) {
@@ -425,38 +355,29 @@
     parent.appendChild(badge);
   }
 
-  function coreSummary(coreValue) {
-    var core = normalizeCore(coreValue);
-    var parts = [];
-    if (core.slot) parts.push(core.slot);
-    if (core.main) parts.push(core.main);
-    if (core.quality) parts.push(core.quality);
-    if (core.subStats && core.subStats.length) parts.push(core.subStats.join("/"));
-    if (core.note) parts.push(core.note);
-    return parts.join(" / ");
-  }
-
   function renderRecord(item) {
-    var card = item.card;
-    var record = item.record;
     var wrap = document.createElement("article");
     wrap.className = "record";
+
     var img = document.createElement("img");
-    setImage(img, card.image, card.name + " 圖示");
+    setImage(img, item.card.image, item.card.name);
+
     var main = document.createElement("div");
     main.className = "record-main";
+
     var title = document.createElement("div");
     title.className = "record-title";
-    title.textContent = card.name + " / " + card.role;
+    title.textContent = item.card.name + " / " + item.card.role;
+
     var badges = document.createElement("div");
     badges.className = "badges";
-    addBadge(badges, card.rarity + "星", "star");
-    addBadge(badges, card.color);
-    addBadge(badges, card.type);
-    if (record.owned) addBadge(badges, "已取得", "owned");
-    addBadge(badges, record.duplicate ? "疊卡 " + record.duplicate : "");
-    addBadge(badges, record.rank ? "升星 " + record.rank : "", "star");
-    addBadge(badges, coreSummary(record.core), "core");
+    addBadge(badges, item.card.rarity + "星", "star");
+    addBadge(badges, item.card.color);
+    addBadge(badges, item.card.type);
+    if (item.record.owned) addBadge(badges, "已取得", "owned");
+    addBadge(badges, item.record.duplicate ? "疊卡 " + item.record.duplicate : "");
+    addBadge(badges, item.record.rank ? "升星 " + item.record.rank : "", "star");
+
     var actions = document.createElement("div");
     actions.className = "record-actions";
     var edit = document.createElement("button");
@@ -464,7 +385,7 @@
     edit.textContent = "編輯";
     edit.onclick = function () {
       switchView("cardsView");
-      els.character.value = card.role;
+      els.character.value = item.card.role;
       updateCardOptions();
       els.card.value = item.id;
       selectCard();
@@ -477,11 +398,12 @@
     remove.onclick = function () {
       delete records[item.id];
       saveJSON(CARD_STORAGE_KEY, records);
-      renderRecords();
       renderEditor();
+      renderRecords();
     };
     actions.appendChild(edit);
     actions.appendChild(remove);
+
     main.appendChild(title);
     main.appendChild(badges);
     main.appendChild(actions);
@@ -491,28 +413,26 @@
   }
 
   function renderRecords() {
-    var query = (els.search.value || "").toLowerCase();
+    var query = trim(els.search.value).toLowerCase();
     var items = [];
     var owned = 0;
-    var id;
-    for (id in records) if (records.hasOwnProperty(id) && records[id].owned) owned += 1;
-    els.ownedCount.textContent = String(owned);
-    for (id in records) {
+
+    for (var id in records) {
       if (!records.hasOwnProperty(id)) continue;
-      for (var i = 0; i < cards.length; i += 1) {
-        if (cardId(cards[i]) === id) {
-          var haystack = (cards[i].role + " " + cards[i].name).toLowerCase();
-          if (!query || haystack.indexOf(query) !== -1) items.push({ id: id, card: cards[i], record: records[id] });
-          break;
-        }
-      }
+      if (records[id].owned) owned += 1;
+      var card = findCardById(id);
+      if (!card) continue;
+      var text = (card.role + " " + card.name + " " + card.color + " " + card.type).toLowerCase();
+      if (!query || text.indexOf(query) !== -1) items.push({ id: id, card: card, record: records[id] });
     }
+
     items.sort(function (a, b) {
-      var roleCompare = a.card.role.localeCompare(b.card.role, "zh-Hant");
-      return roleCompare || a.card.name.localeCompare(b.card.name, "zh-Hant");
+      return a.card.role.localeCompare(b.card.role, "zh-Hant") ||
+        a.card.name.localeCompare(b.card.name, "zh-Hant");
     });
-    replaceChildren(els.list, []);
-    for (var j = 0; j < items.length; j += 1) els.list.appendChild(renderRecord(items[j]));
+
+    els.ownedCount.textContent = String(owned);
+    replaceChildren(els.list, items.map(renderRecord));
     els.empty.style.display = items.length ? "none" : "block";
   }
 
@@ -525,176 +445,197 @@
     }
   }
 
-  function createTrigger() {
-    var title = trim(els.triggerTitle.value);
-    if (!title) {
-      showStatus("請先輸入觸發名稱。");
+  function updateCalcCardOptions() {
+    var list = cardsForRole(els.calcRole.value);
+    replaceChildren(els.calcCard, list.map(function (card) { return option(cardId(card), card.name); }));
+    if (list[0]) els.calcCard.value = cardId(list[0]);
+    renderCoreRecommendation();
+    renderCalculator();
+  }
+
+  function selectedCalcCard() {
+    return findCardById(els.calcCard.value);
+  }
+
+  function recommendedMain(card) {
+    if (!card) return "攻擊%";
+    if (card.talent === "生命") return "生命%";
+    if (card.talent === "防禦") return "防禦%";
+    return "攻擊%";
+  }
+
+  function renderCoreRecommendation() {
+    var card = selectedCalcCard();
+    if (!card) {
+      els.coreRecommendation.textContent = "請先選擇卡片。";
       return;
     }
-    triggers.push({
-      id: String(Date.now()),
-      role: els.triggerRole.value,
-      category: els.triggerCategory.value,
-      title: title,
-      note: trim(els.triggerNote.value),
-      done: els.triggerDone.checked,
-      updatedAt: new Date().toISOString()
-    });
-    els.triggerTitle.value = "";
-    els.triggerNote.value = "";
-    els.triggerDone.checked = false;
-    saveJSON(TRIGGER_STORAGE_KEY, triggers);
-    renderTriggers();
+    var slots = card.type === "日冕" ? "α / β" : "γ / δ";
+    var main = recommendedMain(card);
+    els.coreRecommendation.innerHTML = [
+      "<p><strong>" + card.type + "芯核建議</strong>：優先看 " + slots + "，主屬性可先選 " + main + "。</p>",
+      "<p><strong>副詞條</strong>：暴擊率、暴擊傷害、傷害加成，再補 " + main + " 或缺少的基礎屬性。</p>",
+      card.type === "日冕" ? "<p><strong>日卡套</strong>：同角色、同星譜的日冕成套時，先湊套裝需求，再微調 α / β 芯核。</p>" : ""
+    ].join("");
   }
 
-  function renderTrigger(item) {
-    var wrap = document.createElement("article");
-    wrap.className = "record no-image";
-    var main = document.createElement("div");
-    main.className = "record-main";
-    var title = document.createElement("div");
-    title.className = "record-title";
-    title.textContent = item.title;
-    var badges = document.createElement("div");
-    badges.className = "badges";
-    addBadge(badges, item.role);
-    addBadge(badges, item.category, "star");
-    if (item.done) addBadge(badges, "已觸發", "done");
-    var note = document.createElement("p");
-    note.className = "record-note";
-    note.textContent = item.note || "";
-    var actions = document.createElement("div");
-    actions.className = "record-actions";
-    var toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.textContent = item.done ? "取消觸發" : "標記觸發";
-    toggle.onclick = function () {
-      item.done = !item.done;
-      item.updatedAt = new Date().toISOString();
-      saveJSON(TRIGGER_STORAGE_KEY, triggers);
-      renderTriggers();
-    };
-    var remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "danger";
-    remove.textContent = "刪除";
-    remove.onclick = function () {
-      triggers = triggers.filter(function (trigger) { return trigger.id !== item.id; });
-      saveJSON(TRIGGER_STORAGE_KEY, triggers);
-      renderTriggers();
-    };
-    actions.appendChild(toggle);
-    actions.appendChild(remove);
-    main.appendChild(title);
-    main.appendChild(badges);
-    if (item.note) main.appendChild(note);
-    main.appendChild(actions);
-    wrap.appendChild(main);
-    return wrap;
+  function initCoreInputs() {
+    replaceChildren(els.coreSlotA, CORE_SLOTS.map(function (slot) { return option(slot, slot || "未選擇"); }));
+    replaceChildren(els.coreSlotB, CORE_SLOTS.map(function (slot) { return option(slot, slot || "未選擇"); }));
+    renderCoreRows(els.coreRowsA, "A");
+    renderCoreRows(els.coreRowsB, "B");
   }
 
-  function renderTriggers() {
-    var query = (els.triggerSearch.value || "").toLowerCase();
-    var items = triggers.filter(function (item) {
-      var text = (item.role + " " + item.category + " " + item.title + " " + item.note).toLowerCase();
-      return !query || text.indexOf(query) !== -1;
-    });
-    items.sort(function (a, b) {
-      return Number(a.done) - Number(b.done) || b.updatedAt.localeCompare(a.updatedAt);
-    });
-    replaceChildren(els.triggerList, []);
-    for (var i = 0; i < items.length; i += 1) els.triggerList.appendChild(renderTrigger(items[i]));
-    els.triggerEmpty.style.display = items.length ? "none" : "block";
-  }
+  function renderCoreRows(tbody, coreKey) {
+    var rows = [];
+    for (var i = 0; i < 5; i += 1) {
+      var tr = document.createElement("tr");
+      tr.setAttribute("data-core", coreKey);
+      tr.setAttribute("data-row", String(i));
 
-  function num(value) {
-    var parsed = Number(value);
-    return isFinite(parsed) ? parsed : 0;
-  }
+      var statCell = document.createElement("td");
+      var stat = document.createElement("select");
+      stat.className = "core-stat";
+      replaceChildren(stat, STAT_OPTIONS.map(function (item) { return option(item, item); }));
+      statCell.appendChild(stat);
+      tr.appendChild(statCell);
 
-  function percent(value) {
-    return num(value) / 100;
-  }
+      ["initial", "step", "growth"].forEach(function (name) {
+        var td = document.createElement("td");
+        var input = document.createElement("input");
+        input.className = "core-" + name;
+        input.type = "number";
+        input.inputMode = "decimal";
+        input.placeholder = name === "growth" ? "0" : "0";
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
 
-  function formatNumber(value) {
-    if (!isFinite(value)) return "0";
-    return Math.round(value).toLocaleString("zh-Hant");
-  }
-
-  function formatDecimal(value) {
-    if (!isFinite(value)) return "0.00";
-    return value.toFixed(2);
-  }
-
-  function calculatorValues() {
-    return {
-      baseHp: num(document.getElementById("baseHpInput").value),
-      baseAtk: num(document.getElementById("baseAtkInput").value),
-      baseDef: num(document.getElementById("baseDefInput").value),
-      hpPercent: num(document.getElementById("hpPercentInput").value),
-      atkPercent: num(document.getElementById("atkPercentInput").value),
-      defPercent: num(document.getElementById("defPercentInput").value),
-      flatHp: num(document.getElementById("flatHpInput").value),
-      flatAtk: num(document.getElementById("flatAtkInput").value),
-      flatDef: num(document.getElementById("flatDefInput").value),
-      critRate: num(document.getElementById("critRateInput").value),
-      critDmg: num(document.getElementById("critDmgInput").value),
-      dmgBonus: num(document.getElementById("dmgBonusInput").value),
-      weakBonus: num(document.getElementById("weakBonusInput").value),
-      focus: document.getElementById("calcFocusSelect").value
-    };
-  }
-
-  function saveCalculator(values) {
-    saveJSON(CALCULATOR_STORAGE_KEY, values);
-  }
-
-  function restoreCalculator() {
-    var values = loadJSON(CALCULATOR_STORAGE_KEY, {});
-    var map = {
-      baseHpInput: values.baseHp,
-      baseAtkInput: values.baseAtk,
-      baseDefInput: values.baseDef,
-      hpPercentInput: values.hpPercent,
-      atkPercentInput: values.atkPercent,
-      defPercentInput: values.defPercent,
-      flatHpInput: values.flatHp,
-      flatAtkInput: values.flatAtk,
-      flatDefInput: values.flatDef,
-      critRateInput: values.critRate,
-      critDmgInput: values.critDmg,
-      dmgBonusInput: values.dmgBonus,
-      weakBonusInput: values.weakBonus
-    };
-    for (var id in map) {
-      if (map.hasOwnProperty(id) && map[id] !== undefined) document.getElementById(id).value = map[id];
+      var totalCell = document.createElement("td");
+      var total = document.createElement("output");
+      total.className = "core-total";
+      total.textContent = "0";
+      totalCell.appendChild(total);
+      tr.appendChild(totalCell);
+      rows.push(tr);
     }
-    if (values.focus) document.getElementById("calcFocusSelect").value = values.focus;
+    replaceChildren(tbody, rows);
+  }
+
+  function calcStateFromDOM() {
+    return {
+      role: els.calcRole.value,
+      card: els.calcCard.value,
+      level: clamp(parseInt(els.calcLevel.value || "1", 10), 1, 80),
+      advance: els.calcAdvance.value,
+      focus: els.calcFocus.value,
+      baseHp: num(els.baseHp.value),
+      baseAtk: num(els.baseAtk.value),
+      baseDef: num(els.baseDef.value),
+      coreA: readCore("A"),
+      coreB: readCore("B")
+    };
+  }
+
+  function readCore(coreKey) {
+    var tbody = coreKey === "A" ? els.coreRowsA : els.coreRowsB;
+    var slot = coreKey === "A" ? els.coreSlotA.value : els.coreSlotB.value;
+    var rows = [];
+    var trs = tbody.querySelectorAll("tr");
+    for (var i = 0; i < trs.length; i += 1) {
+      rows.push({
+        stat: trs[i].querySelector(".core-stat").value,
+        initial: num(trs[i].querySelector(".core-initial").value),
+        step: num(trs[i].querySelector(".core-step").value),
+        growth: num(trs[i].querySelector(".core-growth").value)
+      });
+    }
+    return { slot: slot, rows: rows };
+  }
+
+  function applyCalcState(state) {
+    if (!state) return;
+    if (state.role) {
+      els.calcRole.value = state.role;
+      updateCalcCardOptions();
+    }
+    if (state.card && findCardById(state.card)) els.calcCard.value = state.card;
+    if (state.level) els.calcLevel.value = state.level;
+    if (state.advance !== undefined) els.calcAdvance.value = state.advance;
+    if (state.focus) els.calcFocus.value = state.focus;
+    els.baseHp.value = state.baseHp || "";
+    els.baseAtk.value = state.baseAtk || "";
+    els.baseDef.value = state.baseDef || "";
+    applyCore("A", state.coreA);
+    applyCore("B", state.coreB);
+  }
+
+  function applyCore(coreKey, core) {
+    if (!core) return;
+    var slot = coreKey === "A" ? els.coreSlotA : els.coreSlotB;
+    var tbody = coreKey === "A" ? els.coreRowsA : els.coreRowsB;
+    slot.value = core.slot || "";
+    var trs = tbody.querySelectorAll("tr");
+    for (var i = 0; i < trs.length; i += 1) {
+      var row = core.rows && core.rows[i] ? core.rows[i] : {};
+      trs[i].querySelector(".core-stat").value = row.stat || STAT_OPTIONS[0];
+      trs[i].querySelector(".core-initial").value = row.initial || "";
+      trs[i].querySelector(".core-step").value = row.step || "";
+      trs[i].querySelector(".core-growth").value = row.growth || "";
+    }
+  }
+
+  function sumCoreRows(core) {
+    var total = {};
+    for (var i = 0; i < core.rows.length; i += 1) {
+      var row = core.rows[i];
+      var value = row.initial + row.step * row.growth;
+      total[row.stat] = (total[row.stat] || 0) + value;
+    }
+    return total;
+  }
+
+  function addTotals(a, b) {
+    var result = {};
+    var key;
+    for (key in a) if (a.hasOwnProperty(key)) result[key] = (result[key] || 0) + a[key];
+    for (key in b) if (b.hasOwnProperty(key)) result[key] = (result[key] || 0) + b[key];
+    return result;
+  }
+
+  function updateCoreRowTotals() {
+    var rows = document.querySelectorAll(".stat-table tbody tr");
+    for (var i = 0; i < rows.length; i += 1) {
+      var initial = num(rows[i].querySelector(".core-initial").value);
+      var step = num(rows[i].querySelector(".core-step").value);
+      var growth = num(rows[i].querySelector(".core-growth").value);
+      rows[i].querySelector(".core-total").textContent = formatNumber(initial + step * growth);
+    }
   }
 
   function renderCalculator() {
-    var values = calculatorValues();
-    var hp = values.baseHp * (1 + percent(values.hpPercent)) + values.flatHp;
-    var atk = values.baseAtk * (1 + percent(values.atkPercent)) + values.flatAtk;
-    var def = values.baseDef * (1 + percent(values.defPercent)) + values.flatDef;
-    var focusValue = values.focus === "hp" ? hp : values.focus === "def" ? def : atk;
-    var cappedCrit = Math.max(0, Math.min(values.critRate, 100));
-    var critFactor = 1 + percent(cappedCrit) * percent(values.critDmg);
-    var dmgFactor = 1 + percent(values.dmgBonus) + percent(values.weakBonus);
+    updateCoreRowTotals();
+    var state = calcStateFromDOM();
+    var coreTotals = addTotals(sumCoreRows(state.coreA), sumCoreRows(state.coreB));
+    var hp = state.baseHp * (1 + percent(coreTotals["生命%"])) + num(coreTotals["生命"]);
+    var atk = state.baseAtk * (1 + percent(coreTotals["攻擊%"])) + num(coreTotals["攻擊"]);
+    var def = state.baseDef * (1 + percent(coreTotals["防禦%"])) + num(coreTotals["防禦"]);
+    var focusValue = state.focus === "hp" ? hp : state.focus === "def" ? def : atk;
+    var critRate = clamp(num(coreTotals["暴擊率"]), 0, 100);
+    var critDmg = num(coreTotals["暴擊傷害"]);
+    var dmgBonus = num(coreTotals["傷害加成"]) + num(coreTotals["虛弱增傷"]) + num(coreTotals["誓約增傷"]);
+    var critFactor = 1 + percent(critRate) * percent(critDmg);
+    var dmgFactor = 1 + percent(dmgBonus);
     var score = focusValue * critFactor * dmgFactor;
-    var labels = {
-      hp: "生命輸出指數",
-      atk: "攻擊輸出指數",
-      def: "防禦輸出指數"
-    };
     var result = [
-      ["最終生命", formatNumber(hp)],
-      ["最終攻擊", formatNumber(atk)],
-      ["最終防禦", formatNumber(def)],
-      ["暴擊期望", formatDecimal(critFactor) + "x"],
-      ["增傷倍率", formatDecimal(dmgFactor) + "x"],
-      [labels[values.focus] || "輸出指數", formatNumber(score)]
+      ["生命總值", formatInteger(hp)],
+      ["攻擊總值", formatInteger(atk)],
+      ["防禦總值", formatInteger(def)],
+      ["暴擊率", formatNumber(critRate) + "%"],
+      ["暴擊傷害", formatNumber(critDmg) + "%"],
+      ["估算輸出指數", formatInteger(score)]
     ];
+
     replaceChildren(els.calculatorResult, result.map(function (item) {
       var card = document.createElement("div");
       card.className = "result-card";
@@ -706,143 +647,211 @@
       card.appendChild(strong);
       return card;
     }));
-    saveCalculator(values);
+    saveJSON(CALCULATOR_STORAGE_KEY, state);
   }
 
   function resetCalculator() {
-    for (var i = 0; i < els.calcInputs.length; i += 1) {
-      if (!els.calcInputs[i]) continue;
-      if (els.calcInputs[i].tagName === "SELECT") els.calcInputs[i].value = "atk";
-      else els.calcInputs[i].value = "";
-    }
+    els.calcLevel.value = "1";
+    els.calcAdvance.value = "0";
+    els.calcFocus.value = "atk";
+    els.baseHp.value = "";
+    els.baseAtk.value = "";
+    els.baseDef.value = "";
+    applyCore("A", { slot: "", rows: [] });
+    applyCore("B", { slot: "", rows: [] });
     saveJSON(CALCULATOR_STORAGE_KEY, {});
     renderCalculator();
   }
 
-  function currentGachaEstimate() {
-    var target = Math.max(1, num(els.pityTarget.value || 70));
-    var pity = Math.max(0, num(els.pity.value));
-    var remaining = Math.max(0, target - pity);
-    var tickets = Math.max(0, num(els.tickets.value));
-    var diamonds = Math.max(0, num(els.diamonds.value));
-    var perPull = Math.max(1, num(els.diamondPerPull.value || 150));
-    var availablePulls = tickets + Math.floor(diamonds / perPull);
+  function gachaStateFromDOM() {
     return {
-      target: target,
-      pity: pity,
-      remaining: remaining,
-      tickets: tickets,
-      diamonds: diamonds,
-      perPull: perPull,
-      availablePulls: availablePulls,
-      shortPulls: Math.max(0, remaining - availablePulls),
-      shortDiamonds: Math.max(0, remaining - availablePulls) * perPull
+      remainingTo5Star: clamp(parseInt(els.remainingTo5Star.value || "1", 10), 1, 70),
+      currentPoolType: els.currentPool.value,
+      lastObtainedCard: els.lastObtained.value,
+      nextPoolType: els.nextPool.value
     };
   }
 
-  function renderGachaEstimate() {
-    var estimate = currentGachaEstimate();
-    els.gachaEstimate.innerHTML = [
-      "<p><strong>距離目標保底</strong>：還差 " + estimate.remaining + " 抽。</p>",
-      "<p><strong>目前資源</strong>：約可抽 " + estimate.availablePulls + " 抽。</p>",
-      "<p><strong>缺口</strong>：" + (estimate.shortPulls ? "還缺 " + estimate.shortPulls + " 抽，約 " + estimate.shortDiamonds + " 鑽。" : "資源已足夠到目標保底。") + "</p>"
-    ].join("");
+  function renderLastObtainedOptions() {
+    var currentValue = els.lastObtained.value;
+    var options = els.currentPool.value === "triple" ? LAST_CARD_OPTIONS.triple : LAST_CARD_OPTIONS.normal;
+    replaceChildren(els.lastObtained, options.map(function (pair) { return option(pair[0], pair[1]); }));
+    var exists = options.some(function (pair) { return pair[0] === currentValue; });
+    els.lastObtained.value = exists ? currentValue : options[1][0];
   }
 
-  function createBanner() {
-    var name = trim(els.bannerName.value);
-    if (!name) {
-      showStatus("請先輸入卡池名稱。");
+  function gachaResult(state) {
+    var currentPulls = 70 - state.remainingTo5Star;
+    var bigPity = state.lastObtainedCard.indexOf("standard") !== -1;
+    var targetedPity = 0;
+    if (state.currentPoolType === "triple") {
+      targetedPity = state.lastObtainedCard === "standard_with_target" || state.lastObtainedCard === "up_with_target" ? 1 : 0;
+    }
+    var targetTriple = state.nextPoolType === "triple" || (state.nextPoolType === "same" && state.currentPoolType === "triple");
+    var remainingPulls;
+    if (targetTriple) {
+      if (state.currentPoolType === "triple" && state.nextPoolType === "same" && targetedPity === 1) {
+        remainingPulls = state.remainingTo5Star;
+      } else {
+        remainingPulls = state.remainingTo5Star + 70;
+      }
+    } else {
+      remainingPulls = bigPity ? state.remainingTo5Star : state.remainingTo5Star + 70;
+    }
+    var probabilityText = currentPulls < 60 ?
+      "還需 " + (60 - currentPulls) + " 抽開始提升機率" :
+      "目前機率約 " + (11 + (currentPulls - 61) * 10) + "% → " + Math.min(100, 11 + (currentPulls - 60) * 10) + "%";
+    var steps = remainingPulls > 70 ? [
+      { pulls: state.remainingTo5Star, text: targetTriple ? "先出 5 星並累積心願值" : "先出 5 星並觸發大保底" },
+      { pulls: 70, text: targetTriple ? "再出定向思念" : "再出 UP 思念" }
+    ] : [
+      { pulls: remainingPulls, text: targetTriple ? "取得定向思念" : "取得 UP 思念" }
+    ];
+    return {
+      currentPulls: currentPulls,
+      bigPity: bigPity,
+      targetedPity: targetedPity,
+      targetTriple: targetTriple,
+      remainingPulls: remainingPulls,
+      probabilityText: probabilityText,
+      steps: steps
+    };
+  }
+
+  function renderGacha() {
+    renderLastObtainedOptions();
+    var state = gachaStateFromDOM();
+    els.remainingTo5Star.value = state.remainingTo5Star;
+    var result = gachaResult(state);
+    var upRate = state.currentPoolType === "triple" ? "75%" : "50%";
+    var lines = [
+      ["小保底", result.currentPulls + "/70", result.probabilityText],
+      ["大保底", result.bigPity ? "已觸發" : "未觸發", result.bigPity ? "下個 5 星必定是 UP 思念" : "下個 5 星有 " + upRate + " 機率為 UP 思念"]
+    ];
+    if (state.currentPoolType === "triple" || state.nextPoolType === "triple") {
+      lines.push(["定向", result.targetedPity + "/1",
+        state.currentPoolType !== "triple" ? "切換到多人月卡池後可選定向" :
+          state.nextPoolType === "triple" && state.nextPoolType !== "same" ? "切換多人卡池會重置心願值" :
+            result.targetedPity ? "下個 5 星必定是定向思念" : "目前未累積心願值"
+      ]);
+    }
+    lines.push(["預計最多", result.remainingPulls + " 抽", result.targetTriple ? "獲得定向思念（需選定向）" : "獲得 UP 思念"]);
+
+    var wrap = document.createElement("div");
+    for (var i = 0; i < lines.length; i += 1) {
+      var line = document.createElement("div");
+      line.className = "status-line";
+      line.innerHTML = "<span>" + lines[i][0] + "</span><strong>" + lines[i][1] + "</strong><em>" + lines[i][2] + "</em>";
+      wrap.appendChild(line);
+    }
+    var detail = document.createElement("div");
+    detail.className = "detail-text";
+    detail.innerHTML = result.steps.map(function (step) {
+      return "<p>在 " + step.pulls + " 抽內：" + step.text + "</p>";
+    }).join("");
+    wrap.appendChild(detail);
+    replaceChildren(els.gachaResult, [wrap]);
+    saveJSON(GACHA_STORAGE_KEY, state);
+  }
+
+  function initTriggers() {
+    if (!hiddenTriggers.length) {
+      els.triggerDataInfo.textContent = "找不到隱藏觸發資料，請確認 hidden-triggers.js 有一起上傳。";
       return;
     }
-    var estimate = currentGachaEstimate();
-    banners.push({
-      id: String(Date.now()),
-      name: name,
-      type: els.bannerType.value,
-      pity: estimate.pity,
-      pityTarget: estimate.target,
-      totalPulls: Math.max(0, num(els.totalPulls.value)),
-      diamonds: estimate.diamonds,
-      tickets: estimate.tickets,
-      diamondPerPull: estimate.perPull,
-      guarantee: els.guarantee.checked,
-      note: trim(els.bannerNote.value),
-      updatedAt: new Date().toISOString()
-    });
-    els.bannerName.value = "";
-    els.pity.value = "";
-    els.totalPulls.value = "";
-    els.diamonds.value = "";
-    els.tickets.value = "";
-    els.guarantee.checked = false;
-    els.bannerNote.value = "";
-    saveJSON(GACHA_STORAGE_KEY, banners);
-    renderGachaEstimate();
-    renderBanners();
+    var roles = ["全部"].concat(unique(hiddenTriggers.map(function (item) { return item.role; })));
+    var categories = ["全部"].concat(unique(hiddenTriggers.map(function (item) { return item.system; })));
+    replaceChildren(els.triggerRole, roles.map(function (role) { return option(role, role); }));
+    replaceChildren(els.triggerCategory, categories.map(function (category) { return option(category, category); }));
+    els.triggerDataInfo.textContent = "已載入 " + hiddenTriggers.length + " 筆隱藏觸發資料";
   }
 
-  function renderBanner(item) {
-    var estimate = {
-      remaining: Math.max(0, item.pityTarget - item.pity),
-      availablePulls: Math.max(0, item.tickets) + Math.floor(Math.max(0, item.diamonds) / Math.max(1, item.diamondPerPull || 150))
-    };
+  function triggerDone(id) {
+    return !!triggerChecks[id];
+  }
+
+  function filteredTriggers() {
+    var role = els.triggerRole.value;
+    var category = els.triggerCategory.value;
+    var status = els.triggerStatus.value;
+    var query = normalizeSearch(trim(els.triggerSearch.value));
+    return hiddenTriggers.filter(function (item) {
+      if (role !== "全部" && item.role !== role) return false;
+      if (category !== "全部" && item.system !== category) return false;
+      if (status === "done" && !triggerDone(item.id)) return false;
+      if (status === "todo" && triggerDone(item.id)) return false;
+      var text = normalizeSearch([item.role, item.system, item.subtype, item.condition, item.reward].join(" "));
+      return !query || text.indexOf(query) !== -1;
+    });
+  }
+
+  function renderTrigger(item) {
     var wrap = document.createElement("article");
-    wrap.className = "record no-image";
-    var main = document.createElement("div");
-    main.className = "record-main";
+    wrap.className = "record no-image trigger-card";
+    var label = document.createElement("label");
+    label.className = "trigger-check";
+
+    var input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = triggerDone(item.id);
+    input.onchange = function () {
+      if (input.checked) triggerChecks[item.id] = true;
+      else delete triggerChecks[item.id];
+      saveJSON(TRIGGER_STORAGE_KEY, triggerChecks);
+      renderTriggers();
+    };
+
+    var body = document.createElement("div");
     var title = document.createElement("div");
     title.className = "record-title";
-    title.textContent = item.name;
+    title.textContent = "#" + item.id + " " + item.role + " / " + item.subtype;
     var badges = document.createElement("div");
     badges.className = "badges";
-    addBadge(badges, item.type, "star");
-    addBadge(badges, "墊抽 " + item.pity + "/" + item.pityTarget);
-    addBadge(badges, "可抽 " + estimate.availablePulls);
-    addBadge(badges, item.guarantee ? "目標保底" : "未保證", item.guarantee ? "done" : "");
-    var note = document.createElement("p");
-    note.className = "record-note";
-    note.textContent = "距離保底 " + estimate.remaining + " 抽" + (item.note ? " / " + item.note : "");
-    var actions = document.createElement("div");
-    actions.className = "record-actions";
-    var plus = document.createElement("button");
-    plus.type = "button";
-    plus.textContent = "+1 抽";
-    plus.onclick = function () {
-      item.pity += 1;
-      item.totalPulls += 1;
-      item.updatedAt = new Date().toISOString();
-      saveJSON(GACHA_STORAGE_KEY, banners);
-      renderBanners();
-    };
-    var remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "danger";
-    remove.textContent = "刪除";
-    remove.onclick = function () {
-      banners = banners.filter(function (banner) { return banner.id !== item.id; });
-      saveJSON(GACHA_STORAGE_KEY, banners);
-      renderBanners();
-    };
-    actions.appendChild(plus);
-    actions.appendChild(remove);
-    main.appendChild(title);
-    main.appendChild(badges);
-    main.appendChild(note);
-    main.appendChild(actions);
-    wrap.appendChild(main);
+    addBadge(badges, item.system, "star");
+    addBadge(badges, triggerDone(item.id) ? "已完成" : "未完成", triggerDone(item.id) ? "done" : "");
+    var condition = document.createElement("p");
+    condition.className = "record-note";
+    condition.textContent = "條件：" + item.condition;
+    var reward = document.createElement("p");
+    reward.className = "record-note";
+    reward.textContent = "獲得：" + item.reward;
+
+    body.appendChild(title);
+    body.appendChild(badges);
+    body.appendChild(condition);
+    body.appendChild(reward);
+    label.appendChild(input);
+    label.appendChild(body);
+    wrap.appendChild(label);
     return wrap;
   }
 
-  function renderBanners() {
-    var query = (els.bannerSearch.value || "").toLowerCase();
-    var items = banners.filter(function (item) {
-      return !query || (item.name + " " + item.type + " " + item.note).toLowerCase().indexOf(query) !== -1;
-    });
-    items.sort(function (a, b) { return b.updatedAt.localeCompare(a.updatedAt); });
-    replaceChildren(els.bannerList, []);
-    for (var i = 0; i < items.length; i += 1) els.bannerList.appendChild(renderBanner(items[i]));
-    els.bannerEmpty.style.display = items.length ? "none" : "block";
+  function renderTriggers() {
+    var items = filteredTriggers();
+    var doneCount = hiddenTriggers.filter(function (item) { return triggerDone(item.id); }).length;
+    els.triggerProgressTitle.textContent = "觸發清單 " + doneCount + "/" + hiddenTriggers.length;
+    replaceChildren(els.triggerList, items.map(renderTrigger));
+    els.triggerEmpty.style.display = items.length ? "none" : "block";
+  }
+
+  function setVisibleTriggers(done) {
+    var items = filteredTriggers();
+    for (var i = 0; i < items.length; i += 1) {
+      if (done) triggerChecks[items[i].id] = true;
+      else delete triggerChecks[items[i].id];
+    }
+    saveJSON(TRIGGER_STORAGE_KEY, triggerChecks);
+    renderTriggers();
+  }
+
+  function restoreGacha() {
+    var state = loadJSON(GACHA_STORAGE_KEY, null);
+    if (!state) return;
+    if (state.remainingTo5Star) els.remainingTo5Star.value = state.remainingTo5Star;
+    if (state.currentPoolType) els.currentPool.value = state.currentPoolType;
+    renderLastObtainedOptions();
+    if (state.lastObtainedCard) els.lastObtained.value = state.lastObtainedCard;
+    if (state.nextPoolType) els.nextPool.value = state.nextPoolType;
   }
 
   function bindEvents() {
@@ -854,41 +863,46 @@
     els.owned.onchange = saveCurrent;
     els.duplicate.oninput = saveCurrent;
     els.rank.oninput = saveCurrent;
-    els.coreSlot.onchange = saveCurrent;
-    els.coreMain.onchange = saveCurrent;
-    els.coreQuality.onchange = saveCurrent;
-    els.coreNote.oninput = saveCurrent;
     els.deleteCurrent.onclick = deleteCurrent;
     els.resetForm.onclick = resetCurrent;
     els.search.oninput = renderRecords;
-    els.addTrigger.onclick = createTrigger;
-    els.triggerSearch.oninput = renderTriggers;
-    for (var j = 0; j < els.calcInputs.length; j += 1) {
-      if (els.calcInputs[j]) {
-        els.calcInputs[j].oninput = renderCalculator;
-        els.calcInputs[j].onchange = renderCalculator;
-      }
-    }
+
+    els.calcRole.onchange = updateCalcCardOptions;
+    els.calcCard.onchange = function () { renderCoreRecommendation(); renderCalculator(); };
+    [
+      els.calcLevel, els.calcAdvance, els.calcFocus, els.baseHp, els.baseAtk, els.baseDef,
+      els.coreSlotA, els.coreSlotB, els.coreRowsA, els.coreRowsB
+    ].forEach(function (el) {
+      el.oninput = renderCalculator;
+      el.onchange = renderCalculator;
+    });
     els.resetCalculator.onclick = resetCalculator;
-    var gachaInputs = [els.pity, els.pityTarget, els.diamonds, els.tickets, els.diamondPerPull];
-    for (var k = 0; k < gachaInputs.length; k += 1) {
-      gachaInputs[k].oninput = renderGachaEstimate;
-      gachaInputs[k].onchange = renderGachaEstimate;
-    }
-    els.addBanner.onclick = createBanner;
-    els.bannerSearch.oninput = renderBanners;
+
+    [els.remainingTo5Star, els.currentPool, els.lastObtained, els.nextPool].forEach(function (el) {
+      el.oninput = renderGacha;
+      el.onchange = renderGacha;
+    });
+
+    [els.triggerRole, els.triggerCategory, els.triggerStatus].forEach(function (el) {
+      el.onchange = renderTriggers;
+    });
+    els.triggerSearch.oninput = renderTriggers;
+    els.checkVisibleTriggers.onclick = function () { setVisibleTriggers(true); };
+    els.resetVisibleTriggers.onclick = function () { setVisibleTriggers(false); };
   }
 
   bindEvents();
-  if (!storage.usable) showStatus("這個瀏覽器封鎖 localStorage，本次紀錄可能無法永久保存。");
-  records = loadJSON(CARD_STORAGE_KEY, {});
-  triggers = loadJSON(TRIGGER_STORAGE_KEY, []);
-  banners = loadJSON(GACHA_STORAGE_KEY, []);
-  restoreCalculator();
-  initSelectors();
+  if (!storage.usable) showStatus("目前瀏覽器不能使用 localStorage，本次資料只能暫存在這個分頁。");
+  records = migrateRecords();
+  triggerChecks = loadJSON(TRIGGER_STORAGE_KEY, {});
+  initCardSelectors();
+  initCoreInputs();
+  initTriggers();
+  restoreGacha();
+  applyCalcState(loadJSON(CALCULATOR_STORAGE_KEY, null));
   renderRecords();
-  renderTriggers();
+  renderCoreRecommendation();
   renderCalculator();
-  renderGachaEstimate();
-  renderBanners();
+  renderGacha();
+  renderTriggers();
 })();

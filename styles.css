@@ -106,7 +106,7 @@ button.primary {
   box-shadow: var(--shadow);
 }
 
-.picker, .editor, .records, .trigger-editor {
+.picker, .editor, .records, .trigger-editor, .tool-panel {
   display: grid;
   gap: 13px;
   padding: 14px;
@@ -185,7 +185,7 @@ select:focus, input:focus, textarea:focus {
   accent-color: var(--accent);
 }
 
-.grid2, .grid3, .actions, .record-actions, .core-grid {
+.grid2, .grid3, .actions, .record-actions, .core-grid, .core-columns {
   display: grid;
   gap: 10px;
 }
@@ -217,6 +217,16 @@ button.danger {
 .section-title {
   display: grid;
   gap: 2px;
+}
+
+.section-title.compact h2 {
+  font-size: 0.98rem;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .core-panel {
@@ -383,6 +393,114 @@ button.danger {
   font-size: 0.9rem;
 }
 
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stat-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+}
+
+.stat-table th,
+.stat-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.stat-table th {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.stat-table select,
+.stat-table input {
+  min-height: 38px;
+  padding: 7px 8px;
+}
+
+.stat-table output {
+  display: block;
+  min-width: 54px;
+  color: var(--accent-dark);
+  font-weight: 850;
+}
+
+.gacha-result {
+  display: grid;
+  gap: 10px;
+}
+
+.status-line {
+  display: grid;
+  grid-template-columns: 86px minmax(70px, auto) 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.status-line span {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.status-line strong {
+  color: var(--accent-dark);
+  font-size: 1.05rem;
+}
+
+.status-line em {
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.detail-text {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(65, 111, 168, 0.08);
+  color: #3f536f;
+  font-size: 0.9rem;
+}
+
+.trigger-list {
+  grid-template-columns: 1fr;
+}
+
+.trigger-card {
+  padding: 0;
+}
+
+.trigger-check {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  padding: 10px;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.trigger-check input {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
 .empty {
   color: var(--muted);
   text-align: center;
@@ -400,5 +518,17 @@ button.danger {
   .grid3 { grid-template-columns: repeat(3, 1fr); }
   .editor { grid-template-columns: 1.1fr 0.9fr; }
   .preview, .check-row, .core-panel, .actions { grid-column: 1 / -1; }
+  .core-columns { grid-template-columns: 1fr 1fr; }
   .record-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trigger-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 430px) {
+  .status-line {
+    grid-template-columns: 1fr;
+  }
+
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
 }
